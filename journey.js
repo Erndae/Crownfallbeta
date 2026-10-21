@@ -51,3 +51,6 @@ $('#help').onclick=help;
 $('#settings').onclick=()=>{ $('#dialogContent').innerHTML='<div class="eyebrow">YOUR EXPERIENCE</div><h2>Settings</h2><div class="setting-row"><span>Reduce motion</span><button id="dialogMotion">'+(reduced?'On':'Off')+'</button></div><p>Music, sound, and gameplay speed can be adjusted from the game menu.</p><p>Campaign and Gauntlet progress are stored separately on this device.</p>';dialog.showModal();$('#dialogMotion').onclick=e=>{reduced=!reduced;applyMotion();e.target.textContent=reduced?'On':'Off'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shell.hidden&&!dialog.open){send('journey-pause');hideGame()}});
 applyMotion();if(selected)selectRoute(selected);
+
+// Start at the original game opening; the road map follows the first stage.
+showGame('campaign');

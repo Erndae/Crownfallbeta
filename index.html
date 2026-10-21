@@ -8,7 +8,7 @@
 <link rel="icon" href="cf-favicon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="journey.css"><script src="journey.js" defer></script>
 </head>
-<body>
+<body class="game-open">
 <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
 <symbol id="crown" viewBox="0 0 40 32"><path d="M4 8l9 7L20 2l7 13 9-7-4 20H8z" fill="none" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/><path d="M9 22h22" stroke="currentColor" stroke-width="2"/></symbol>
 <symbol id="king" viewBox="0 0 48 64"><path d="M20 3h8v7h7v7h-7v7h-8v-7h-7v-7h7zM14 25q10-6 20 0l-4 10H18zM18 37h12l3 15H15zM11 53h26v6H11zM8 60h32v3H8z" fill="currentColor" stroke="#1b1916" stroke-width="1.3"/></symbol>
@@ -54,6 +54,6 @@
 </div>
 <footer><span>CROWNFALL <i>·</i> THE ROAD TO A CROWN</span><span>Strategy has a street address.</span></footer>
 </main>
-<div class="game-shell" id="gameShell" hidden><div class="game-toolbar"><button id="backToMap">‹ Journey map</button><span id="gameModeLabel">CAMPAIGN</span><button id="gameMenu">Game menu</button></div><iframe id="gameFrame" title="Crownfall playable game" src="game.html?journey=1" allow="autoplay" loading="lazy"></iframe></div>
+<div class="game-shell" id="gameShell"><div class="game-toolbar"><button id="backToMap">‹ Journey map</button><span id="gameModeLabel">CAMPAIGN</span><button id="gameMenu">Game menu</button></div><iframe id="gameFrame" title="Crownfall playable game" src="game.html?journey=1" allow="autoplay" loading="eager"></iframe></div>
 <dialog id="infoDialog"><button class="dialog-close" aria-label="Close">×</button><div id="dialogContent"></div></dialog>
 </body></html>

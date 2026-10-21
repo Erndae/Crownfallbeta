@@ -17,3 +17,9 @@ This beta uses the `crownfall-beta-journey-` browser-storage prefix. Campaign, G
 Based on Site source commit `81a9ad5c5d601710c7e5deab1a775472898c60c7`. `game-bridge.js` is the readable copy of the bridge embedded in `game.html`.
 
 Run `node validate-beta.mjs` for syntax, asset and storage-isolation checks. The source build also passed journey commitment, resume, idempotency and message-validation checks. Browser visual QA and a full Campaign playthrough were not performed.
+
+## Opening and Crown City board
+
+The site opens on the game menu. New Campaign offers a short tutorial fight or an immediate skip to army creation. Training uses an independent board and legal chess moves, and never changes Campaign cash, rosters or battle saves. Skip remains available during training; completion continues to army creation. The road map appears after the first Downtown stage.
+
+`city-onboarding.js` is embedded inside the game closure in `game.html`. `city-board.css` uses the Downtown illustration, muted stone squares, iron edging and amber highlights for Crown City. Other Lands retain their themes. Run `node validate-onboarding.mjs` to check the opening, both tutorial paths, training move legality and scoring, save preservation, and cancellation when leaving training.
