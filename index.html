@@ -32,6 +32,7 @@
 <svg class="route-overlay" aria-label="Circuit route network"></svg>
 </div><div class="map-topline"><span id="journeyLocation">DOWNTOWN · ON THE ROAD</span></div><div class="map-caption"><span id="mapCaption">THREE ROADS. YOUR CALL.</span><small>Tap a path to explore</small></div></div>
 <div class="network-navigation"><button id="panLeft" aria-label="Pan map left">‹ Earlier stops</button><span>Swipe to explore · Lit branches are reachable</span><button id="panRight" aria-label="Pan map right">Later stops ›</button></div>
+<div class="path-actions" aria-label="Route travel controls"><div class="path-action-label" id="routeActionLabel">Your next stop</div><button class="set-off" id="setOff"><span id="setOffText">Continue Campaign</span><svg><use href="#arrow"/></svg></button><p class="travel-status" id="travelStatus" aria-live="polite">Select a stop on the map or a route below.</p></div>
 <div class="route-cards" aria-label="Route choices">
 <button class="route-card" data-route="safer" aria-pressed="false"><div class="route-card-top"><svg><use href="#shield"/></svg><span>SAFER ROAD</span><i class="selection-dot"></i></div><h3>Back alley</h3><p>20% lower score target.<br>No shop on this branch.</p><span class="route-bottom">Easier next stage</span></button>
 <button class="route-card" data-route="supply" aria-pressed="false"><div class="route-card-top"><svg><use href="#shop"/></svg><span>SHOP BRANCH</span><i class="selection-dot"></i></div><h3>Market stop</h3><p>Visit the shop.<br>+$5 for supplies.</p><span class="route-bottom">Trade · recruit · train</span></button>
@@ -41,7 +42,7 @@
 </section>
 <aside class="journey-panel"><div class="panel-eyebrow"><span class="small-diamond"></span> YOUR JOURNEY</div><h2 id="panelTitle">A way through<br>the city.</h2><p class="panel-copy" id="panelCopy">Under the rooftops. Past the last open shop. Every road leads to your next opponent.</p>
 <div class="route-note" id="routeNote"><span class="note-label">EXPLORE DOWNTOWN</span><p>Choose a road on the map or a card below.</p></div>
-<button class="set-off" id="setOff" disabled><span id="setOffText">Choose your road</span><svg><use href="#arrow"/></svg></button><p class="travel-status" id="travelStatus" aria-live="polite">Three paths. One destination.</p>
+
 <div class="panel-rule"></div><div class="campaign-callout"><span class="panel-eyebrow">YOUR CROWN IS OUT THERE</span><h3>Build your army.<br>Make your move.</h3><p>85 battles. Five Lands.<br>One throne waiting at the end.</p><button class="play-campaign" data-launch="campaign">Play Campaign</button><button class="play-gauntlet" data-launch="gauntlet">Enter the Gauntlet <span>→</span></button></div>
 <div class="world-progress"><span>THE FIVE LANDS</span><div><b title="Crown City">01</b><i></i><span title="Iron Kingdom">02</span><i></i><span title="Olympian Court">03</span><i></i><span title="Shattered Realm">04</span><i></i><span title="Fallen Throne">05</span></div></div></aside>
 </div>

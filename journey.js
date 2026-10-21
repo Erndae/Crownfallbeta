@@ -15,10 +15,10 @@ function persist(){try{localStorage.setItem(MAP_KEY,JSON.stringify({selected,red
 function send(type,extra={}){frame.contentWindow?.postMessage({type,...extra},location.origin)}
 function applyMotion(){document.body.classList.toggle('reduce-motion',reduced);$('#motionToggle').textContent=reduced?'Motion reduced':'Reduce motion';$('#motionToggle').setAttribute('aria-pressed',String(reduced));persist()}
 function selectRoute(id){
- if(traveling||(pendingJourney&&committed)||!ROUTES[id])return;selected=id;committed=false;persist();const r=ROUTES[id];
+ if(traveling||(pendingJourney&&committed)||!ROUTES[id])return;selected=id;committed=false;persist();const r=ROUTES[id];$('#routeActionLabel').textContent=r.title;
  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.toggle('selected',el.dataset.route===id);if(el.matches('.route-card'))el.setAttribute('aria-pressed',String(el.dataset.route===id))});
  $('.route-overlay').classList.add('has-selection');$('#routeNote').style.borderColor=r.color;$('.note-label').style.color=r.color;$('.note-label').textContent=r.label;$('#routeNote p').textContent=r.description;
- $('#setOff').disabled=false;$('#setOff').style.background=r.color;$('#setOffText').textContent=pendingJourney?(pendingJourney.leg==='depart'?'Travel to the fight':id==='supply'?'Travel to the shop':'Travel to the fight'):'Continue Campaign';$('#mapCaption').textContent=r.caption;$('#travelStatus').textContent=pendingJourney?'Your road is saved before you set off.':'Arrive at the destination to enter the Campaign.';
+ $('#setOff').disabled=false;$('#setOff').style.background=r.color;$('#setOffText').textContent=pendingJourney?(pendingJourney.leg==='depart'?'Continue to fight':id==='supply'?'Start route · shop':'Start route · fight'):'Continue Campaign';$('#mapCaption').textContent=r.caption;$('#travelStatus').textContent=pendingJourney?'Your road is saved before you set off.':'Arrive at the destination to enter the Campaign.';
  $('#traveler').setAttribute('transform',`translate(${networkPlan.start.x} ${networkPlan.start.y})`);$('#traveler').classList.remove('arrived');resetCamera();
 }
 document.querySelectorAll('[data-route]').forEach(el=>{el.addEventListener('click',()=>selectRoute(el.dataset.route));if(el.tagName.toLowerCase()==='g')el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRoute(el.dataset.route)}})});
@@ -47,7 +47,7 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
  if(d.type==='crownfall-ready'){frameReady=true;if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
  if(d.type==='journey-request'){
   travelToken++;traveling=false;committed=false;pendingJourney={key:d.key,leg:d.leg||'approach'};buildJourneyNetwork(d);
-  selected=null;persist();
+  selected=null;persist();$('#routeActionLabel').textContent=d.leg==='depart'?'Ready for the next fight':'Choose your next stop';
   document.querySelectorAll('[data-route]').forEach(el=>{el.classList.remove('selected');if(el.matches('.route-card'))el.setAttribute('aria-pressed','false')});
   $('.route-overlay').classList.remove('has-selection');$('#mapWindow').classList.remove('is-traveling');$('#mapWorld').style.transition='';resetCamera();
   $('#traveler').setAttribute('transform',`translate(${networkPlan.start.x} ${networkPlan.start.y})`);$('#traveler').classList.remove('arrived');
@@ -66,7 +66,7 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
   }
   $('#setOff').disabled=true;$('#setOffText').textContent='Choose a reachable stop';$('.note-label').textContent='YOUR NEXT FIGHT';$('#routeNote p').textContent='Choose a road and its benefit. Your choice locks when you set off.';
   $('#travelStatus').textContent='Choose your road to the next fight.';
-  if(ROUTES[d.route]){selectRoute(d.route);committed=true;$('#setOffText').textContent=d.leg==='depart'?'Travel to the fight':'Resume this road';if(d.leg==='depart'){$('.note-label').textContent='SHOP VISITED';$('#routeNote p').textContent='Supplies packed. Continue along the market road to your next opponent.';}$('#travelStatus').textContent='Your road is locked. Resume travel to reach the fight.';}
+  if(ROUTES[d.route]){selectRoute(d.route);committed=true;$('#setOffText').textContent=d.leg==='depart'?'Continue to fight':'Continue this route';if(d.leg==='depart'){$('.note-label').textContent='SHOP VISITED';$('#routeNote p').textContent='Supplies packed. Continue along the market road to your next opponent.';}$('#travelStatus').textContent='Your road is locked. Resume travel to reach the fight.';}
   $('#journeyMain').scrollIntoView({behavior:reduced?'instant':'smooth'});
  }
  if(d.type==='journey-committed'&&pendingJourney?.key===d.key){
