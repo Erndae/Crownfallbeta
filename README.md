@@ -25,3 +25,7 @@ The site opens on the game menu. New Campaign offers a short tutorial fight or a
 `city-onboarding.js` is embedded inside the game closure in `game.html`. `city-board.css` uses the Downtown illustration, muted stone squares, iron edging and amber highlights for Crown City. Other Lands retain their themes. Run `node validate-onboarding.mjs` to check the opening, both tutorial paths, training move legality and scoring, save preservation, and cancellation when leaving training.
 
 Travel commitment and arrival are saved separately. Refreshing before arrival resumes the locked route, while retries keep the same route benefits. The first Campaign battle and Gauntlet do not require travel. Run `node validate-routes.mjs` for route and transition checks.
+
+## Circuit network and optional shops
+
+The scrollable circuit map shows connected branches, battle nodes, markets and the completed route. View whole circuit fits the network; reachable stops are lit. Victories return to the route map instead of opening a shop. Only a chosen market branch opens a shop on arrival. Leave shop returns to the map for the onward travel leg. Safe and dangerous branches skip shopping. Shop inventory, arrival and departure are saved, including across reloads. This restriction applies to Campaign; Gauntlet keeps its Armory flow. Run `node validate-network.mjs` for map connectivity and stop checks.

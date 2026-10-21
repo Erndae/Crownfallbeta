@@ -1,6 +1,6 @@
 /* Campaign travel between fights, with durable commitment and arrival. */
 if (window.parent !== window && new URLSearchParams(location.search).get('journey') === '1') {
-  const journeyOriginalSelect = blindSelect, journeyOriginalStart = startBlind;
+  const journeyOriginalSelect = blindSelect, journeyOriginalStart = startBlind, journeyOriginalShop = shop;
   let journeyPending = null;
   const journeyPost = (type, data = {}) => window.parent.postMessage({type, ...data}, location.origin);
   const journeyKey = cityRouteKey;
@@ -11,10 +11,12 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     return !r || r.arrived === false;
   };
   function journeyRequest(){
+    const stop = cityRouteRecord();
+    if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
     RUN.inShop = false; B = null; save();
     journeyPending = journeyKey();
     const r = cityRouteRecord();
-    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route});
+    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
   }
   blindSelect = function () {
     if(MODE === 'campaign' && RUN && !MATCH && !RUN.gauntlet) roadStart();
@@ -26,6 +28,20 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   startBlind = function(){
     if(journeyNeedsTravel()) return journeyRequest();
     return journeyOriginalStart();
+  };
+  // Only an arrived market stop grants access to the Campaign shop.
+  shop = function(){
+    if(MODE !== 'campaign' || !RUN || RUN.gauntlet || MATCH) return journeyOriginalShop();
+    const r = cityRouteRecord();
+    if(!r || r.route !== 'supply' || !r.shopVisited || r.shopLeft || r.arrived){
+      RUN.inShop = false; save(); return blindSelect();
+    }
+    const result = journeyOriginalShop();
+    const next = $('#next');
+    if(next){ next.textContent = 'Leave shop · return to the road'; next.onclick = () => {
+      r.shopLeft = true; RUN.shop = null; RUN.inShop = false; save(); blindSelect();
+    }; }
+    return result;
   };
   function journeyContinue(){
     if(RUN) return B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect());
@@ -47,13 +63,19 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(d.type === 'journey-commit') {
       if(!journeyEligible() || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};
-      if(!RUN.journeyPreview1[d.key]) RUN.journeyPreview1[d.key] = {route:d.route, arrived:false};
+      if(!RUN.journeyPreview1[d.key]) RUN.journeyPreview1[d.key] = {route:d.route, arrived:false, networkVersion:1};
       cityRouteApply();
       save(); // a reload resumes this locked road; supplies cannot be awarded again
       journeyPost('journey-committed',{key:d.key, route:cityRouteRecord().route});return;
     }
     if(d.type === 'journey-arrive' && journeyEligible() && d.key === journeyPending && d.key === journeyKey() && cityRouteRecord()) {
-      cityRouteRecord().arrived = true; save();
+      const r = cityRouteRecord();
+      if(r.route === 'supply' && !r.shopVisited){
+        r.shopVisited = true; RUN.shop = null; RUN.inShop = true; save();
+        journeyPending = null; return shop();
+      }
+      if(r.route === 'supply' && !r.shopLeft) return shop();
+      r.arrived = true; save();
       journeyPending = null; cityRouteApply(); return journeyOriginalSelect();
     }
   });

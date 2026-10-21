@@ -7,3 +7,26 @@
 body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{transition:none!important;animation:none!important}
 
 .game-shell{background:linear-gradient(#0b1219a6,#0b1117c4),url("downtown-journey.webp") center/cover no-repeat}.game-toolbar{background:#121c20e8;border-color:#72654e55}.game-toolbar>span{color:#ddbd88}
+
+/* A scrollable circuit network, with optional market detours. */
+.network-toolbar,.network-navigation{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 0;color:#9fa99d;font-size:11px}
+.network-toolbar>div{display:flex;flex-wrap:wrap;gap:15px}.network-toolbar button,.network-navigation button{border:1px solid #665d49;background:#202628;border-radius:3px;padding:9px 12px;font-size:11px;color:#e6ce9f;white-space:nowrap}
+.legend-shop{color:#e6be7e}.legend-safe{color:#9db8aa}.legend-risk{color:#e66898}.legend-battle{color:#eeebe3}
+.map-window{height:540px;max-height:72dvh;min-height:400px;aspect-ratio:auto;overflow:auto;touch-action:pan-x pan-y;scrollbar-color:#867457 #182023;scrollbar-width:thin}
+.map-world{position:relative;height:100%;max-width:none;transform:none!important;transition:none!important;left:0}
+.map-art{position:absolute;inset:0;object-fit:cover;filter:saturate(.5) brightness(.32)}
+.map-vignette{background:linear-gradient(90deg,#0c171bb0,#0c171b25 30%,#0c171b40 70%,#0c171bb0)}
+.map-topline,.map-caption{display:none}.route-overlay{overflow:hidden}
+.network-grid{stroke:#b6c5bf12;stroke-width:1;fill:none}.network-link{fill:none;stroke:#89958f48;stroke-width:3;stroke-dasharray:6 10}
+.network-edge.visited .network-link{stroke:#e5d7b5;stroke-width:4;stroke-dasharray:none}.network-edge.past:not(.visited){opacity:.28}
+.network-node{color:#9db8aa}.network-node.supply{color:#e6be7e}.network-node.risky{color:#e66898}.network-node.locked{opacity:.35}.network-node.visited{opacity:.9}
+.network-node circle{fill:#162329;stroke:currentColor;stroke-width:3}.network-node.reachable{cursor:pointer}.network-node.reachable circle{stroke-width:4;filter:drop-shadow(0 0 12px currentColor)}
+.network-node.selected circle{fill:#3b3b30;stroke-width:7}.node-symbol{text-anchor:middle;font:700 36px 'Barlow Condensed',sans-serif;fill:currentColor;pointer-events:none}
+.node-label{text-anchor:middle;font:700 20px 'Barlow Condensed',sans-serif;letter-spacing:1px;fill:currentColor;paint-order:stroke;stroke:#101a20;stroke-width:5px;stroke-linejoin:round;pointer-events:none}
+.node-detail{text-anchor:middle;font:14px 'DM Sans',sans-serif;fill:#c7d0c7;paint-order:stroke;stroke:#101a20;stroke-width:4px;pointer-events:none}
+.battle-node{color:#d3d6cb}.battle-node circle{fill:#263036;stroke:#d3d6cb;stroke-width:3}.battle-node.cleared{color:#9db8aa}.battle-node.cleared circle{fill:#263b36;stroke:#9db8aa}
+.traveler-halo{fill:#f8d99b12;stroke:#ffe0a4;stroke-width:2;stroke-dasharray:4 8}.you-label{text-anchor:middle;fill:#ffe4ac;font:700 17px 'DM Sans',sans-serif;paint-order:stroke;stroke:#101a20;stroke-width:5px}
+#traveler{pointer-events:none}.route-hit{stroke-width:85}.route-line{stroke-width:5;opacity:.9}.route-track.selected .route-line{stroke-width:7}.route-glow{filter:none;stroke-width:16}
+.network-navigation>span{text-align:center;color:#8c958a;font-size:10px}.stage b{max-width:115px;overflow:hidden;text-overflow:ellipsis}
+@media(max-width:800px){.map-window{height:480px}.network-toolbar,.network-navigation{font-size:10px}.network-toolbar>div{gap:10px}.network-navigation>span{font-size:9px}.network-navigation button{padding:8px;font-size:10px}.stage b{max-width:65px}}
+@media(max-width:540px){.map-window{height:440px;min-height:360px}.network-toolbar button{font-size:9px;padding:8px}.network-toolbar>div{gap:8px;font-size:9px}.network-navigation>span{max-width:130px}}
