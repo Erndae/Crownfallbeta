@@ -2,9 +2,9 @@
 const $ = s => document.querySelector(s);
 const MAP_KEY = 'crownfall-journey-preview-1';
 const ROUTES = {
- safer:{title:'Back alley',label:'THE SAFER ROAD',caption:'KEEP TO THE SHADOWS.',description:'Take cover: the next Downtown stage has a 20% lower score target. Standard victory reward.',color:'#9db8aa'},
+ safer:{title:'Back alley',label:'THE SAFER ROAD',caption:'KEEP TO THE SHADOWS.',description:'Take cover: the next fight has a 20% lower score target. Standard victory reward.',color:'#9db8aa'},
  supply:{title:'Market street',label:'THE SUPPLY ROAD',caption:'FOLLOW THE WARM WINDOWS.',description:'Collect $5 in supplies when you commit to this road. Spend it on training before the next fight. Standard score target.',color:'#e6be7e'},
- risky:{title:'Rooftop crossing',label:'THE RISKY ROAD',caption:'TAKE THE HIGH ROAD.',description:'Raise the next Downtown stage’s score target by 20%. Win for an extra $8. Checkmate still wins.',color:'#e66898'}
+ risky:{title:'Rooftop crossing',label:'THE RISKY ROAD',caption:'TAKE THE HIGH ROAD.',description:'Raise the next fight’s score target by 20%. Win for an extra $8. Checkmate still wins.',color:'#e66898'}
 };
 let saved={};try{saved=JSON.parse(localStorage.getItem(MAP_KEY)||'{}')}catch{}
 let selected=ROUTES[saved.selected]?saved.selected:null;
@@ -15,10 +15,10 @@ function persist(){try{localStorage.setItem(MAP_KEY,JSON.stringify({selected,red
 function send(type,extra={}){frame.contentWindow?.postMessage({type,...extra},location.origin)}
 function applyMotion(){document.body.classList.toggle('reduce-motion',reduced);$('#motionToggle').textContent=reduced?'Motion reduced':'Reduce motion';$('#motionToggle').setAttribute('aria-pressed',String(reduced));persist()}
 function selectRoute(id){
- if(traveling||!ROUTES[id])return;selected=id;committed=false;persist();const r=ROUTES[id];
+ if(traveling||(pendingJourney&&committed)||!ROUTES[id])return;selected=id;committed=false;persist();const r=ROUTES[id];
  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.toggle('selected',el.dataset.route===id);if(el.matches('.route-card'))el.setAttribute('aria-pressed',String(el.dataset.route===id))});
  $('.route-overlay').classList.add('has-selection');$('#routeNote').style.borderColor=r.color;$('.note-label').style.color=r.color;$('.note-label').textContent=r.label;$('#routeNote p').textContent=r.description;
- $('#setOff').disabled=false;$('#setOff').style.background=r.color;$('#setOffText').textContent=pendingJourney?'Set off for Stage 2':'Walk this route';$('#mapCaption').textContent=r.caption;$('#travelStatus').textContent=pendingJourney?'Your road is saved before you set off.':'Arrive at the destination to enter the Campaign.';
+ $('#setOff').disabled=false;$('#setOff').style.background=r.color;$('#setOffText').textContent=pendingJourney?'Walk to the next fight':'Walk this route';$('#mapCaption').textContent=r.caption;$('#travelStatus').textContent=pendingJourney?'Your road is saved before you set off.':'Arrive at the destination to enter the Campaign.';
  $('#traveler').setAttribute('transform','translate(140 650)');$('#traveler').classList.remove('arrived');resetCamera();
 }
 document.querySelectorAll('[data-route]').forEach(el=>{el.addEventListener('click',()=>selectRoute(el.dataset.route));if(el.tagName.toLowerCase()==='g')el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRoute(el.dataset.route)}})});
@@ -41,12 +41,37 @@ document.querySelectorAll('[data-launch]').forEach(el=>el.onclick=()=>launch(el.
 $('#backToMap').onclick=()=>{send('journey-pause');hideGame()};$('#gameMenu').onclick=()=>send('journey-menu');$('#navJourney').onclick=hideGame;
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow)return;const d=e.data;if(!d||typeof d!=='object')return;
  if(d.type==='crownfall-ready'){frameReady=true;if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
- if(d.type==='journey-request'){pendingJourney={key:d.key};committed=false;hideGame();$('#panelTitle').innerHTML='Your next<br>opponent awaits.';$('#panelCopy').textContent='Stage 1 is behind you. Choose a path through Downtown to reach Stage 2: The Rival.';document.querySelectorAll('.stage').forEach(el=>{el.classList.toggle('current',el.dataset.stage==='2');el.classList.toggle('done',el.dataset.stage==='1')});$('#travelStatus').textContent='Stage cleared. Choose your road.';if(selected)selectRoute(selected);$('#journeyMain').scrollIntoView({behavior:reduced?'instant':'smooth'});}
- if(d.type==='journey-committed'&&pendingJourney?.key===d.key){committed=true;traveling=false;walk();}
+ if(d.type==='journey-request'){
+  travelToken++;traveling=false;committed=false;pendingJourney={key:d.key};
+  selected=null;persist();
+  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.remove('selected');if(el.matches('.route-card'))el.setAttribute('aria-pressed','false')});
+  $('.route-overlay').classList.remove('has-selection');$('#mapWindow').classList.remove('is-traveling');$('#mapWorld').style.transition='';resetCamera();
+  $('#traveler').setAttribute('transform','translate(140 650)');$('#traveler').classList.remove('arrived');
+  hideGame();$('#panelTitle').textContent='Your next opponent awaits.';
+  $('#panelCopy').textContent=`Choose your road to ${d.circuit || 'the next fight'} · ${d.destination || 'Next stage'}. Each route changes this fight.`;
+  $('#journeyLand').textContent=d.landName || 'Campaign';$('#journeyCircuit').textContent=d.circuit || 'Your journey';
+  $('#journeyChapter').textContent=d.ruler?'THE RULER’S ROAD':`STAGE ${d.stage} OF ${d.stages}`;
+  $('#journeyLocation').textContent=(d.circuit || 'CAMPAIGN')+' · ON THE ROAD';
+  const strip=$('.stage-strip');strip.replaceChildren();
+  const count=d.ruler?1:Math.max(1,Math.min(6,Number(d.stages)||4));
+  for(let n=1;n<=count;n++){
+   if(n>1){const line=document.createElement('div');line.className='stage-line';strip.appendChild(line);}
+   const stage=document.createElement('div');stage.className='stage'+(d.ruler||n===d.stage?' current':n<d.stage?' done':'');
+   const num=document.createElement('span');num.textContent=d.ruler?'♛':String(n).padStart(2,'0');
+   const label=document.createElement('div'),small=document.createElement('small'),name=document.createElement('b');small.textContent=d.ruler?'RULER':`STAGE ${n}`;name.textContent=d.ruler||n===d.stage?(d.destination||'Next fight'):n<d.stage?'Cleared':'Ahead';label.append(small,name);stage.append(num,label);strip.appendChild(stage);
+  }
+  $('#setOff').disabled=true;$('#setOffText').textContent='Choose your road';$('.note-label').textContent='YOUR NEXT FIGHT';$('#routeNote p').textContent='Choose a road and its benefit. Your choice locks when you set off.';
+  $('#travelStatus').textContent='Choose your road to the next fight.';
+  if(ROUTES[d.route]){selectRoute(d.route);committed=true;$('#setOffText').textContent='Resume this road';$('#travelStatus').textContent='Your road is locked. Resume travel to reach the fight.';}
+  $('#journeyMain').scrollIntoView({behavior:reduced?'instant':'smooth'});
+ }
+ if(d.type==='journey-committed'&&pendingJourney?.key===d.key){
+  traveling=false;committed=false;if(ROUTES[d.route])selectRoute(d.route);committed=true;walk();
+ }
  if(d.type==='journey-error'){traveling=false;$('#setOff').disabled=false;$('#setOffText').textContent='Choose your road';$('#travelStatus').textContent=d.message||'Return to the game to continue.';}
 });
 const dialog=$('#infoDialog');$('.dialog-close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
-function help(){ $('#dialogContent').innerHTML='<div class="eyebrow">MAKE YOUR MOVE</div><h2>Chess, with a crown<br>on the line.</h2><p>Build a named army and cross five Lands. Win each battle by reaching its score target or delivering checkmate.</p><ul><li><b>Campaign:</b> assemble your army, train your pieces, and conquer 85 story battles.</li><li><b>The Gauntlet:</b> an independent survival run with three lives, arena equipment, and endless waves.</li><li><b>Journey:</b> choose a path and watch your King travel through Downtown. The new scene appears between its first two Campaign stages.</li></ul><p>Back alley: 20% lower Stage 2 target. Market street: $5 now. Rooftop crossing: 20% higher Stage 2 target and $8 extra on victory. Choose after Downtown Stage 1; your choice is locked when you set off. Bonuses cannot be collected again by refreshing.</p><p>Your progress saves automatically in this browser. The game menu includes full rules and save options.</p>';dialog.showModal()}
+function help(){ $('#dialogContent').innerHTML='<div class="eyebrow">MAKE YOUR MOVE</div><h2>Chess, with a crown<br>on the line.</h2><p>Build a named army and cross five Lands. Win each battle by reaching its score target or delivering checkmate.</p><ul><li><b>Campaign:</b> assemble your army, train your pieces, and conquer 85 story battles.</li><li><b>The Gauntlet:</b> an independent survival run with three lives, arena equipment, and endless waves.</li><li><b>Journey:</b> choose a path and watch your King travel between every Campaign fight, including new circuits and Ruler battles.</li></ul><p>Back alley: 20% lower next-fight target. Market street: $5 now. Rooftop crossing: 20% higher next-fight target and $8 extra on victory. Choose between Campaign fights; your choice is locked when you set off. Bonuses cannot be collected again by refreshing.</p><p>Your progress saves automatically in this browser. The game menu includes full rules and save options.</p>';dialog.showModal()}
 $('#help').onclick=help;
 $('#settings').onclick=()=>{ $('#dialogContent').innerHTML='<div class="eyebrow">YOUR EXPERIENCE</div><h2>Settings</h2><div class="setting-row"><span>Reduce motion</span><button id="dialogMotion">'+(reduced?'On':'Off')+'</button></div><p>Music, sound, and gameplay speed can be adjusted from the game menu.</p><p>Campaign and Gauntlet progress are stored separately on this device.</p>';dialog.showModal();$('#dialogMotion').onclick=e=>{reduced=!reduced;applyMotion();e.target.textContent=reduced?'On':'Off'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shell.hidden&&!dialog.open){send('journey-pause');hideGame()}});

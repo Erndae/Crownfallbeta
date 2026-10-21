@@ -1,7 +1,7 @@
-/* Saved Downtown route benefits. Only the selected Stage 2 fight is affected. */
+/* Saved Campaign route benefits. Each choice affects only its destination fight. */
 function cityRouteKey(){ return `${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|${RUN.ante}`; }
 function cityRouteRecord(){
-  if(MODE !== 'campaign' || !RUN || MATCH || RUN.gauntlet || RUN.land !== 'street' || RUN.circuit !== 'downtown' || RUN.ante !== 2 || RUN.blind !== 2) return null;
+  if(MODE !== 'campaign' || !RUN || MATCH || RUN.gauntlet || RUN.blind !== 2) return null;
   return (RUN.journeyPreview1 || {})[cityRouteKey()] || null;
 }
 function cityRouteApply(){
