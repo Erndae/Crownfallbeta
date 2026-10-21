@@ -1,5 +1,4 @@
-/* Journey preview 1. Presentation-only integration with the v156 game.
-   Scoped to the first Downtown transition. No combat or reward functions replaced. */
+/* Downtown journey: saved route choices and Stage 2 benefits. */
 if (window.parent !== window && new URLSearchParams(location.search).get('journey') === '1') {
   const journeyOriginalSelect = blindSelect;
   let journeyPending = null;
@@ -12,6 +11,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       journeyPost('journey-request', {key:journeyPending});
       return;
     }
+    cityRouteApply();
     return journeyOriginalSelect();
   };
   window.addEventListener('message', e => {
@@ -32,11 +32,12 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       if(!RUN || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};
       if(!RUN.journeyPreview1[d.key]) RUN.journeyPreview1[d.key] = {route:d.route};
+      cityRouteApply();
       save(); // commit before animation; refresh goes straight to the existing Stage screen
       journeyPost('journey-committed',{key:d.key});return;
     }
     if(d.type === 'journey-arrive' && RUN && d.key === journeyPending && RUN.journeyPreview1 && RUN.journeyPreview1[d.key]) {
-      journeyPending = null; return journeyOriginalSelect();
+      journeyPending = null; cityRouteApply(); return journeyOriginalSelect();
     }
   });
   window.addEventListener('load',()=>journeyPost('crownfall-ready'));

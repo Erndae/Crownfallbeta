@@ -2,7 +2,7 @@
 
 Play at https://erndae.github.io/Crownfallbeta/.
 
-This is the v156-based playable build from the Crownfall Journey Site, including the illustrated Downtown map, crown-shaped initiative dice, and automatic Campaign entry when route travel finishes. During the first Downtown Stage 1→2 transition, arrival opens the corresponding Stage screen. Routes currently change the visual journey only; battle rewards and balance are unchanged.
+This is the v156-based playable build from the Crownfall Journey Site, including the illustrated Downtown map, crown-shaped initiative dice, and automatic Campaign entry when route travel finishes. During the first Downtown Stage 1→2 transition, arrival opens the corresponding Stage screen. Routes affect Downtown Stage 2: Back alley lowers its score target by 20%; Market street grants $5 on commitment; Rooftop crossing raises its target by 20% and grants $8 extra on victory. Targets stay fixed on retries; supplies are granted once, including across refreshes. Other stages and modes are unaffected. Existing selected routes receive benefits when returning to the Stage 2 selection screen, without changing a battle already in progress.
 
 ## Hosting
 

@@ -3568,7 +3568,7 @@ function targetFor(i){
     const t = gTarget(); if(i === RUN.blind) RUN.fightTarget = {key, t}; return t; }
   const key = [RUN.land, RUN.circuit, RUN.ante, i].join('|');
   if(i === RUN.blind && RUN.fightTarget && RUN.fightTarget.key === key) return RUN.fightTarget.t;
-  const t = targetParts(i).final;
+  const t = cityRouteTarget(targetParts(i).final);
   if(i === RUN.blind){ RUN.fightTarget = {key, t}; }
   return t;
 }
@@ -5625,11 +5625,12 @@ function blindSelect(){
     <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:24px">${rulerRoad() ? `The Ruler’s Road<small class="stname">Final battle</small>` : `Stage ${RUN.ante}<small class="stname">${stageName(RUN.ante)}</small>`}<small class="circname" style="--cc:${CIR().col}">${(csDef(land(), RUN.circuit) || {}).ic ? `<i class="cic">${csDef(land(), RUN.circuit).ic}&#xFE0E;</i>` : ''}${CIR().name}</small>${cpDef(land(), RUN.circuit) ? `<button class="cptrait" id="cptrait">${cpDef(land(), RUN.circuit).tr}</button>` : ''}</h2><span style="text-align:right"><span class="money" style="font-size:24px">$${RUN.money}</span><br>${hearts(lives())}</span></div>
     ${relicRow()}
     ${stageProgress()}
+    ${cityRouteNote()}
     <div class="blinds solo">${BLINDS.map((bl, i) => i < 2 ? '' : `<div class="bcard k${i} ${i===RUN.blind?'cur':i<RUN.blind?'done':''}${i===2 ? (boss.ruler ? ' ruler' : boss.mini ? ' rival' : ' boss') : ''}">
       <div class="chip" style="background:${bl.col}">${i === 2 && boss.ruler ? 'RULER' : i === 2 && boss.mini ? 'BOSS' : i === 2 ? (['INTRO', 'RIVAL', 'ELITE'][RUN.ante - 1] || LV().chips[i]) : LV().chips[i]}</div>
       <span style="font-family:var(--display)">${i===2 ? bossName(boss.id) : roundName(i)}</span>
       <small>Score at least</small><b>${t(i).toLocaleString()}</b>
-      <small>Reward $${bl.reward}</small>
+      <small>Reward $${bl.reward}${cityRouteReward() ? ` + $${cityRouteReward()} route bonus` : ''}</small>
       ${i===2 ? `<div class="bchips">${bossChips(boss.id).map(c => `<small class="bsig rule">${c}</small>`).join('')}${(() => { const a = SIG_BOSS[bossName(boss.id)], t = a && ARCHE[sigBase(a)] && ARCHE[sigBase(a)].tag; return t ? `<small class="bsig">${t}</small>${DOUBLE_MARCH.has(sigBase(a)) ? '<small class="bsig dm">Double March</small>' : ''}` : ''; })()}</div>` : ''}
       ${i===2 && personaOf(boss.id) && personaOf(boss.id).style ? `<small class="bstyle">${STYLE_TXT[personaOf(boss.id).style].replace(/: (.)/, (m, c) => ' · ' + c.toUpperCase())}</small>` : ''}
       ${i===2 ? '<small class="bmore">Tap for rules</small>' : ''}
@@ -8844,7 +8845,8 @@ function winBlind(){
   const laRes = (() => { try{ return laWin(RUN.blind === 2, RUN.blind === 2 && bossId() === 'ruler'); }catch(e){ return null; } })();   // v147: before the rewards window
   const chal = chalWinReward();
   evWin();   // v139/v140: a wager bound to this fight settles (first try + its Challenge)
-  const total = reward + movesBonus + interest + piggy + mateBonus + chal.cash;
+  const routeBonus = cityRouteReward();
+  const total = reward + movesBonus + interest + piggy + mateBonus + chal.cash + routeBonus;
   const bossWin = RUN.blind === 2, finalWin = bossWin && RUN.ante === nStages() && !RUN.won;
   const bp = bossWin && !RUN.gauntlet ? personaOf(bossId()) : null;
   // presentation facts, captured before the commit below moves the run on
@@ -8857,6 +8859,7 @@ function winBlind(){
       <div class="kv"><span>${RUN.circuit === 'ruler' ? 'Ruler reward' : 'Stage reward'}${debtNote ? ` (${C('loanshark').name} took it)` : ''}</span><b class="money">$${reward}</b></div>
       ${blitzOn() ? `<div class="kv"><span>${blitzLeft} moves left ($${B.hustle ? 2 : 1} each)</span><b class="money">$${movesBonus}</b></div>` : `<div class="kv"><span>Moves used</span><b>${B.moveCount != null ? B.moveCount : B.movesStart - B.moves}</b></div>`}
       <div class="kv"><span>Savings bonus ($2 per $5 saved, max $${isC('midnight') ? 12 : 10})</span><b class="money">$${interest}</b></div>
+      ${routeBonus ? `<div class="kv"><span>Rooftop route bonus</span><b class="money">$${routeBonus}</b></div>` : ''}
       ${piggy ? `<div class="kv"><span>Piggy Bank</span><b class="money">$${piggy}</b></div>` : ''}
       ${mateBonus ? `<div class="kv"><span>Checkmate bonus</span><b class="money">$${mateBonus}</b></div>` : ''}
       ${chal.cash ? `<div class="kv"><span>Challenge · ${chal.name}${chal.swap ? ' · +1 Swap next round' : ''}</span><b class="money">$${chal.cash}</b></div>` : ''}
@@ -9988,8 +9991,29 @@ firstGame = function(){
   coachMark('intro');startBlind();
 };
 
-/* Journey preview 1. Presentation-only integration with the v156 game.
-   Scoped to the first Downtown transition. No combat or reward functions replaced. */
+/* Saved Downtown route benefits. Only the selected Stage 2 fight is affected. */
+function cityRouteKey(){ return `${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|${RUN.ante}`; }
+function cityRouteRecord(){
+  if(MODE !== 'campaign' || !RUN || MATCH || RUN.gauntlet || RUN.land !== 'street' || RUN.circuit !== 'downtown' || RUN.ante !== 2 || RUN.blind !== 2) return null;
+  return (RUN.journeyPreview1 || {})[cityRouteKey()] || null;
+}
+function cityRouteApply(){
+  const r = cityRouteRecord();
+  if(!r || r.benefitsVersion || B || !['safer','supply','risky'].includes(r.route)) return;
+  r.benefitsVersion = 1;
+  if(r.route === 'supply') RUN.money += 5;
+  RUN.fightTarget = null; // recalculate once, then the normal target cache handles retries
+  save();
+}
+function cityRoute(){ const r = cityRouteRecord(); return r && r.benefitsVersion === 1 ? r.route : null; }
+function cityRouteTarget(t){ const r = cityRoute(); return r === 'safer' ? Math.max(1, Math.round(t * .8)) : r === 'risky' ? Math.round(t * 1.2) : t; }
+function cityRouteReward(){ return cityRoute() === 'risky' ? 8 : 0; }
+function cityRouteNote(){
+  const r = cityRoute();
+  const notes = {safer:'Back alley · 20% lower score target for this stage.', supply:'Market street · $5 supplies added to your wallet.', risky:'Rooftop crossing · 20% higher score target. Win this stage for an extra $8.'};
+  return r ? `<p class="training-note">${notes[r]}</p>` : '';
+}
+/* Downtown journey: saved route choices and Stage 2 benefits. */
 if (window.parent !== window && new URLSearchParams(location.search).get('journey') === '1') {
   const journeyOriginalSelect = blindSelect;
   let journeyPending = null;
@@ -10002,6 +10026,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       journeyPost('journey-request', {key:journeyPending});
       return;
     }
+    cityRouteApply();
     return journeyOriginalSelect();
   };
   window.addEventListener('message', e => {
@@ -10022,11 +10047,12 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       if(!RUN || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};
       if(!RUN.journeyPreview1[d.key]) RUN.journeyPreview1[d.key] = {route:d.route};
+      cityRouteApply();
       save(); // commit before animation; refresh goes straight to the existing Stage screen
       journeyPost('journey-committed',{key:d.key});return;
     }
     if(d.type === 'journey-arrive' && RUN && d.key === journeyPending && RUN.journeyPreview1 && RUN.journeyPreview1[d.key]) {
-      journeyPending = null; return journeyOriginalSelect();
+      journeyPending = null; cityRouteApply(); return journeyOriginalSelect();
     }
   });
   window.addEventListener('load',()=>journeyPost('crownfall-ready'));
