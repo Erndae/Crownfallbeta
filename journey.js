@@ -23,7 +23,6 @@ function selectRoute(id){
 }
 document.querySelectorAll('[data-route]').forEach(el=>{el.addEventListener('click',()=>selectRoute(el.dataset.route));if(el.tagName.toLowerCase()==='g')el.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRoute(el.dataset.route)}})});
 function resetCamera(){if(traveling)return;$('#mapWorld').style.transform='translateX(0)';}
-$('#resetCamera').onclick=resetCamera;
 $('#panLeft').onclick=()=>{if(!traveling)$('#mapWorld').style.transform='translateX(0)'};
 $('#panRight').onclick=()=>{if(!traveling){const w=$('#mapWindow').clientWidth,m=$('#mapWorld').clientWidth;$('#mapWorld').style.transform=`translateX(-${Math.max(0,m-w)}px)`}};
 $('#motionToggle').onclick=()=>{reduced=!reduced;applyMotion()};
