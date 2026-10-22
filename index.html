@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#111315"><meta name="description" content="Crownfall. A chess roguelike through five unforgettable Lands. Choose your road, build your army, and claim the Crowns.">
 <title>Crownfall — The road to a crown</title>
 <link rel="icon" href="cf-favicon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="journey.css"><script src="journey-world.js" defer></script><script src="journey-lands.js" defer></script><script src="journey-map.js" defer></script><script src="journey-atlas-themes.js" defer></script><script src="journey-cartography.js" defer></script><script src="journey-world-ui.js" defer></script><script src="journey.js" defer></script>
+<link rel="stylesheet" href="journey.css"><script src="journey-stop-icons.js" defer></script><script src="journey-world.js" defer></script><script src="journey-lands.js" defer></script><script src="journey-map.js" defer></script><script src="journey-atlas-themes.js" defer></script><script src="journey-cartography.js" defer></script><script src="journey-world-ui.js" defer></script><script src="journey.js" defer></script>
 </head>
 <body class="game-open">
 <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -26,7 +26,7 @@
 <section class="map-column" aria-label="Downtown journey map">
 <div class="journey-summary" aria-live="polite"><div><small>YOU ARE HERE</small><strong id="currentPlace">District entrance</strong></div><div><small>NEXT BATTLE</small><strong id="nextBattle">Continue your journey</strong></div></div>
 <div class="stage-strip" aria-label="Circuit stages"><div class="stage current" data-stage="1"><span>01</span><div><small>STAGE ONE</small><b>Introduction</b></div></div><div class="stage-line"></div><div class="stage" data-stage="2"><span>02</span><div><small>STAGE TWO</small><b>The Rival</b></div></div><div class="stage-line"></div><div class="stage" data-stage="3"><span>03</span><div><small>STAGE THREE</small><b>Elite Challenge</b></div></div><div class="stage-line"></div><div class="stage" data-stage="4"><svg><use href="#crown"/></svg><div><small>STAGE FOUR</small><b>Circuit Boss</b></div></div></div>
-<div class="network-toolbar"><span id="mapInstructions">Tap a numbered stop to choose your destination.</span><button id="mapOverview">Whole map</button></div>
+<div class="network-toolbar"><span id="mapInstructions">Tap a lit stop symbol to choose your destination.</span><button id="mapOverview">Whole map</button></div>
 <div class="map-window" id="mapWindow"><div class="map-world" id="mapWorld">
 <img class="map-art" src="downtown-journey.webp" alt="An ink-painted Crown City block, with magenta brick buildings, an amber-lit market, rooftop catwalks and a sheltered lower alley." fetchpriority="high">
 <div class="map-vignette"></div>
@@ -34,6 +34,7 @@
 </div><div class="map-topline"><span id="journeyLocation">DOWNTOWN · ON THE ROAD</span></div><div class="map-caption"><span id="mapCaption">YOUR NEXT CROSSROADS.</span><small>Tap a path to explore</small></div></div>
 <div class="network-navigation"><button id="panLeft" aria-label="Pan map left">‹ Earlier stops</button><button id="centerMap" aria-label="Return to your current location">My location</button><button id="panRight" aria-label="Pan map right">Later stops ›</button></div>
 <div class="path-actions" aria-label="Route travel controls"><div class="path-action-label" id="routeActionLabel">Your next stop</div><button class="set-off" id="setOff"><span id="setOffText">Continue Campaign</span><svg><use href="#arrow"/></svg></button><p class="travel-status" id="travelStatus" aria-live="polite">Select a stop on the map or a route below.</p></div>
+<div class="stop-legend" id="stopLegend" aria-label="Map symbols"></div>
 <h2 class="choice-heading">Choose your next stop</h2><div class="route-cards" aria-label="Route choices">
 <button class="route-card" data-route="safer" aria-pressed="false"><div class="route-card-top"><svg><use href="#shield"/></svg><span>SAFER ROAD</span><i class="selection-dot"></i></div><h3>Back alley</h3><p>20% lower score target.<br>No shop on this branch.</p><span class="route-bottom">Easier next stage</span></button>
 <button class="route-card" data-route="supply" aria-pressed="false"><div class="route-card-top"><svg><use href="#shop"/></svg><span>SHOP BRANCH</span><i class="selection-dot"></i></div><h3>Market stop</h3><p>Visit the shop.<br>+$5 for supplies.</p><span class="route-bottom">Trade · recruit · train</span></button>

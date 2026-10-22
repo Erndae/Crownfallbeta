@@ -28,7 +28,14 @@ function networkElement(tag,attrs={},text){
  if(text!==undefined)el.textContent=text;
  return el;
 }
+function stopLogoElement(type){const g=networkElement('g',{class:'node-logo'});g.innerHTML=journeyStopLogo(type,true);return g;}
+function stopVisitedBadge(){const g=networkElement('g',{class:'stop-visited',transform:'translate(25 -27)'});g.append(networkElement('rect',{x:-11,y:-11,width:22,height:22,rx:6,fill:'#182b25',stroke:'#adcbb2','stroke-width':2}),networkElement('path',{d:'M-6 0L-1 5L7-5',fill:'none',stroke:'#d5f3da','stroke-width':3}));return g;}
+function renderStopLegend(){
+ const legend=document.querySelector('#stopLegend');if(!legend)return;
+ legend.innerHTML=[['fight','Fight'],['boss','Boss'],['supply','Shop'],['cache','Supplies'],['safer','Shelter'],['risky','Danger'],['road','Crossroads'],['entry','Entrance']].map(([type,label])=>`<span>${journeyStopLogo(type)}${label}</span>`).join('');
+}
 function buildJourneyNetwork(data){
+ renderStopLegend();
  if(data.networkVersion===2)return buildWorldNetwork(data);
  restoreLegacyCards();
  const theme=applyJourneyLand(data);
@@ -52,7 +59,7 @@ function buildJourneyNetwork(data){
  for(const l of g.links){
   const node=networkElement('g',{class:`network-node ${l.route} ${l.active?'reachable':'locked'} ${l.visited?'visited':''}`,transform:`translate(${l.b.x} ${l.b.y})`});
   if(l.active){node.setAttribute('data-route',l.route);node.setAttribute('role','button');node.setAttribute('tabindex','0');node.setAttribute('aria-label',theme.routes[l.route]+(l.route==='supply'?': visit shop and collect $5':l.route==='safer'?': 20% lower next fight target':': 20% higher target and $8 extra on victory'));node.onclick=()=>selectRoute(l.route);node.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectRoute(l.route);}};}
-  node.append(networkElement('circle',{r:38}),networkElement('text',{class:'node-symbol',y:11},l.route==='supply'?'$':l.route==='safer'?'◇':'!'));
+  node.append(networkElement('circle',{r:38}),stopLogoElement(l.route));if(l.visited)node.append(stopVisitedBadge());
   node.append(networkElement('text',{class:'node-label',y:65},theme.routes[l.route].toUpperCase()));
   node.append(networkElement('text',{class:'node-detail',y:89},l.route==='supply'?'SHOP · trade · recruit':l.route==='safer'?'−20% target':'+20% target · +$8'));
   svg.append(node);
@@ -60,7 +67,7 @@ function buildJourneyNetwork(data){
  for(let i=0;i<=g.count;i++){
   const p=g.fight(i),done=i<g.current||data.location==='fight'&&i===g.current;
   const node=networkElement('g',{class:`battle-node ${done?'cleared':''}`,transform:`translate(${p.x} ${p.y})`});
-  node.append(networkElement('circle',{r:42}),networkElement('text',{class:'node-symbol',y:11},i===0?'•':done?'✓':i===g.count?'♛':String(i)));
+  node.append(networkElement('circle',{r:42}),stopLogoElement(i===0?'entry':i===g.count?'boss':'fight'));if(done&&i>0)node.append(stopVisitedBadge());
   node.append(networkElement('text',{class:'node-label',y:72},i===0?'ENTRY':data.ruler?'RULER':i===g.count?'CIRCUIT BOSS':`FIGHT ${i}`));
   node.append(networkElement('text',{class:'node-detail',y:96},i===0?'Your road begins':done?'Cleared':(data.stageNames?.[data.ruler?Number(data.stage)-1:i-1] || (i===g.current?'Next opponent':'Ahead'))));
   svg.append(node);

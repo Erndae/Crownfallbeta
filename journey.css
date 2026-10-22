@@ -104,7 +104,7 @@ body[data-journey-land=fantasy] .cartographic-map .node-label,body[data-journey-
 body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-land=throne] .cartographic-map .node-detail{stroke:#302632}
 .atlas-district-labels text{paint-order:stroke;stroke:#14212c;stroke-width:5px;stroke-linejoin:round;letter-spacing:3px}
 
-/* A clear current location, numbered choices and a consistent travel action. */
+/* A clear current location, stop symbols and a consistent travel action. */
 .journey-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:15px 17px;margin-bottom:16px;background:#1b282c;border:1px solid #67706a;border-radius:5px;scroll-margin-top:14px}
 .journey-summary small{display:block;color:#b6bcb1;font-size:10px;letter-spacing:1.5px;margin-bottom:5px}.journey-summary strong{display:block;font-size:17px;color:#f4e6c6;line-height:1.35}.journey-summary>div:first-child{border-left:3px solid #eacb8f;padding-left:10px}
 .network-toolbar>span{font-size:13px;color:#e0e0d4;line-height:1.5}.network-toolbar button{min-height:42px;font-size:12px}
@@ -115,3 +115,8 @@ body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-l
 .cartographic-map .network-node.reachable circle{stroke-width:5;fill:#172630}.cartographic-map .route-line{stroke-width:7}.cartographic-map .route-track.selected .route-line{stroke-width:11}
 .journey-panel .campaign-callout,.journey-panel .panel-rule,.journey-panel .world-progress{display:none}.journey-panel .route-note{margin-bottom:0}
 @media(max-width:800px){.journey-panel{display:block;width:100%}.journey-panel>.panel-copy{max-width:none}.journey-panel>.route-note{margin:16px 0 0}.journey-summary{padding:12px;gap:10px}.journey-summary strong{font-size:15px}.stage-strip{display:none}.page-heading{margin-bottom:17px}.network-toolbar>span{font-size:12px}.map-window{height:440px}.path-actions .travel-status{white-space:normal;font-size:11px}.path-action-label{font-size:16px}.route-cards{grid-template-columns:1fr}.route-card{display:grid;grid-template-columns:1fr;gap:0;padding:14px 16px 0}.route-card h3{font-size:24px;margin:7px 0 0}.route-card p{font-size:14px;margin:6px 0 10px}.route-card .route-bottom{min-height:0;font-size:11px;padding:9px 0}.under-map{font-size:10px}.network-navigation>span{font-size:10px}}
+
+/* Stop emblems remain visible after visiting; completion has its own small badge. */
+.stop-logo{display:inline-block;vertical-align:middle;flex:none;overflow:visible;pointer-events:none}.node-logo{pointer-events:none}.stop-visited{pointer-events:none}.node-logo .stop-logo{color:inherit}
+.stop-legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin:18px 0 0;padding:12px 0;border-block:1px solid #59625c70;color:#d8d8c9;font-size:12px}.stop-legend>span{display:inline-flex;align-items:center;gap:6px}.stop-legend .stop-logo{width:23px;height:23px;color:var(--amber,#e6be7e)}
+.route-card-top .stop-logo{width:25px;height:25px;margin-right:7px}.stage .stop-logo{width:24px;height:24px}
