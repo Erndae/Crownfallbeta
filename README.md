@@ -47,3 +47,7 @@ New journeys use a connected graph of individual stops, with one to four onward 
 Each edge is saved before departure. Refresh resumes that destination; rewards cannot be repeated, and leaving a shop returns to its exact node. Only connected nodes are accepted by the game bridge. Existing version-1 journeys finish on their original locked route; the following journey uses the new graph. Save namespaces and the Gauntlet are unchanged.
 
 Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 stages), alongside the existing beta, route, network, onboarding and music validators. Browser checks cover cache → shelter → battle, optional shop arrival/departure, all five map themes, four-choice junctions, and phone/desktop layouts.
+
+## Overhead location atlas
+
+`journey-cartography.js` draws a street-map background directly in the route map’s coordinates. Each stop has its own building or plaza; road surfaces follow the exact travel paths. Shops have striped storefronts, caches have storage crates, shelters have gardens, and junctions have fountain squares. Battle destinations have halls, stations or fortified strongholds. The harbor has a waterfront and piers. Each land retains its palette, and older saved journeys receive the atlas too. The route map no longer uses a perspective landscape behind floating points.

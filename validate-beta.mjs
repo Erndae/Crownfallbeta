@@ -7,7 +7,7 @@ for(const file of ['index.html','game.html','legacy.html']) {
  for(const m of html.matchAll(/<script\b[^>]*>([\s\S]*?)<\/script>/gi)) new vm.Script(m[1],{filename:file});
  for(const m of html.matchAll(/["']([^"'<>\n]+\.(?:webp|png|mp3|svg|css|js))["']/g)) if(!m[1].includes(':')) assert(existsSync(m[1]),'Missing '+m[1]);
 }
-for(const file of ['beta-storage.js','journey.js','journey-world.js','journey-world-ui.js','journey-map.js','journey-lands.js','sw.js']) new vm.Script(readFileSync(file,'utf8'),{filename:file});
+for(const file of ['beta-storage.js','journey.js','journey-world.js','journey-world-ui.js','journey-cartography.js','journey-map.js','journey-lands.js','sw.js']) new vm.Script(readFileSync(file,'utf8'),{filename:file});
 const html=readFileSync('game.html','utf8');
 const storageLayer=html.slice(html.indexOf('const RAW_GET ='),html.indexOf('(function(){\nconst $ ='));
 for(const mode of ['campaign','gauntlet']) {

@@ -75,3 +75,20 @@ body[data-journey-land=throne] .map-vignette{background:linear-gradient(90deg,#2
 .stage-strip{flex-wrap:wrap}.stage{flex:1;min-width:0}.stage b{white-space:normal;line-height:1.3}
 .network-node.locked{opacity:.55}.network-node.entry{opacity:.8}
 @media(max-width:540px){.route-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.route-card h3{font-size:22px;min-height:0}.route-card p{font-size:11px}.route-bottom{font-size:9px}.stage b{font-size:9px}.map-window{height:420px}.network-node.reachable circle{filter:none}}
+
+/* Overhead atlas: landmarks and their markers share exact map coordinates. */
+.cartographic-map .map-art,.cartographic-map .map-vignette{display:none}
+.cartographic-map .route-overlay{background:#29332f}
+.journey-atlas{pointer-events:none}
+.atlas-district-labels text,.atlas-water-label{font:600 19px var(--display);letter-spacing:4px;fill:var(--atlas-ink);text-anchor:middle;opacity:.8}
+.atlas-water-label{opacity:.55;font-size:18px;letter-spacing:8px}
+.atlas-compass text{text-anchor:middle;font:700 18px var(--display);fill:var(--atlas-ink)}
+.cartographic-map .network-link{stroke:#e5dcb65c;stroke-width:3;stroke-dasharray:5 13}
+.cartographic-map .network-edge.past:not(.visited){opacity:.55}
+.cartographic-map .network-node.locked{opacity:.8}
+.cartographic-map .network-node circle{fill:#202c28;stroke-width:2}
+.cartographic-map .network-node.reachable circle{stroke-width:4}
+.cartographic-map .node-label,.cartographic-map .node-detail{stroke:#202b25;stroke-width:5px}
+.cartographic-map .node-label{font-size:21px;letter-spacing:.3px}
+.cartographic-map .node-detail{fill:#ede5ce;font-size:14px}
+.cartographic-map .traveler-halo{fill:#ffe5a51f;stroke:#ffdf9b}

@@ -34,8 +34,9 @@ function buildJourneyNetwork(data){
  const theme=applyJourneyLand(data);
  networkData=data;networkPlan=planJourneyNetwork(data);const g=networkPlan,svg=document.querySelector('.route-overlay');
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',theme.name+' route network. Choose a reachable stop; only shop branches open shops.');
- const bg=networkElement('g',{'aria-hidden':'true'});
- for(let x=120;x<g.width;x+=135)bg.append(networkElement('path',{d:`M${x} 70 V780`,class:'network-grid'}));svg.append(bg);
+ const atlasNodes=[];for(let i=0;i<=g.count;i++)atlasNodes.push({...g.fight(i),id:'fight-'+i,type:i?'fight':'entry',name:data.stageNames?.[i-1]||'District entrance',boss:i===g.count});
+ for(const l of g.links)atlasNodes.push({...l.b,id:l.i+'-'+l.route,type:l.route,name:theme.routes[l.route]});
+ drawJourneyAtlas(svg,{...g,nodes:atlasNodes},data,g.links.map(l=>l.full));
  for(const l of g.links){
   const group=networkElement('g',{class:`network-edge ${l.visited?'visited':''} ${l.completed?'past':''}`});
   group.append(networkElement('path',{d:l.full,class:'network-link'}));svg.append(group);

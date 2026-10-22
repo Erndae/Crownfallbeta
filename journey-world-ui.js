@@ -22,11 +22,7 @@ function buildWorldNetwork(data){
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',journeyLand(data.land).name+' · connected world locations');
  const history=Object.values(data.history||{}),visitedEdges=new Set(history.flatMap(r=>(r.edges||[]).map(e=>e.join('>'))));
  for(const e of data.record?.edges||[])visitedEdges.add(e.join('>'));
- for(let i=1;i<=g.count;i++){
-  const region=networkElement('g',{'aria-hidden':'true',class:'world-region'});
-  region.append(networkElement('rect',{x:160+(i-1)*1040,y:45,width:980,height:880,rx:80}));
-  region.append(networkElement('text',{x:200+(i-1)*1040,y:970},`${String(i).padStart(2,'0')}  ${journeyStagePlace(data.land,data.circuitId||'downtown',i).toUpperCase()}`));svg.append(region);
- }
+ drawJourneyAtlas(svg,g,data,g.edges.map(e=>worldPath(g.byId[e.from],g.byId[e.to])));
  for(const edge of g.edges){
   const a=g.byId[edge.from],b=g.byId[edge.to],active=g.active.some(e=>e.from===edge.from&&e.to===edge.to),visited=visitedEdges.has(edge.from+'>'+edge.to);
   const path=worldPath(a,b),group=networkElement('g',{class:'network-edge'+(visited?' visited':'')+(b.stage<g.current?' past':'')});
