@@ -2392,6 +2392,7 @@ body[data-pack="gauntlet"] .pblind .sigchip{display:none}
 
 
 <link rel="stylesheet" href="city-board.css">
+<link rel="stylesheet" href="game-clarity.css">
 <div id="app"></div>
 <div id="rotateOv" aria-live="polite"><i aria-hidden="true">📱</i><b>Rotate your phone</b><span>Crownfall battles are designed for portrait play.</span></div>
 
@@ -2912,18 +2913,12 @@ const RULERS = {
   throne:   {name:'The Crownless King', title:'Ruler of the Fallen Throne', rules:['crown','tax','thief'], moveLimit:null, desc:'The target is 40% higher, every move that doesn’t capture costs $1, and your Knights can’t capture.',
              crowns:{easy:'Shard Crown', medium:'Obsidian Crown', hard:'The Crown of Crowns'}, gem:'#e0263f'},
 };
-/* ruler portraits: add art for other rulers here later (king-aldric, zeus, morwen, crownless-king) */
-RULERS.street.art = 'kingpin-vex.webp';
-RULERS.medieval.art = 'king-aldric.webp';
-RULERS.greek.art = 'athena.webp';
-RULERS.fantasy.art = 'morwen.webp';
-RULERS.throne.art = 'crownless-king.webp';
-RULERS.throne.artTop = '-2%'; RULERS.throne.artShift = '-60%'; // hood sits right of center in this artwork
-RULERS.fantasy.artTop = '2%'; // her crown spikes sit higher than the others' heads
+/* Animal land rulers; names and save identifiers retain their established identity. */
+Object.entries({street:['fox','Red fox'],medieval:['lion','Lion'],greek:['owl','Barn owl'],fantasy:['raven','Raven'],throne:['stag','Stag']}).forEach(([land,[animal,species]])=>{RULERS[land].art=`assets/rulers/${animal}.webp`;RULERS[land].animal=animal;RULERS[land].species=species;});
 function rulerFace(l, cls){ const r = RULERS[l]; if(!r || !r.art) return '';
   if(!landOpen(l)) return `<span class="rface sealed ${cls || ''}" aria-label="Unknown ruler"></span>`; // never reveal a sealed land's ruler
   const st = [r.artTop ? `top:${r.artTop}` : '', r.artShift ? `transform:translateX(${r.artShift})` : ''].filter(Boolean).join(';');
-  return `<span class="rface ${cls || ''}"><img src="${r.art}" alt="${r.name}"${st ? ` style="${st}"` : ''}></span>`; }
+  return `<span class="rface animal animal-${r.animal} ${cls || ''}"><img src="${r.art}" alt="${r.name}, humanoid ${r.species}"${st ? ` style="${st}"` : ''}></span>`; }
 const MINI_RULE = {downtown:'clock', rooftop:'crown', harbor:'thief', midnight:'tax'};
 const MINI_DESC = {clock:'Blitz: this round has a move limit.', crown:'The target score is 40% higher.', thief:'Your Knights cannot capture.', tax:'Every move that doesn’t capture costs $1.'};
 const MINIS = {
@@ -5275,11 +5270,12 @@ function circuitSelect(startLand, startCircuit){
     const R = RULERS[PACK], won = landWon(PACK), n = conqCount(PACK), cur = nextStep(PACK), rOpen = rulerOpen(PACK);
     app.innerHTML = `<section class="screen">
       <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:30px">Choose a land</h2><button class="btn ghost" id="cback" style="width:auto;padding:8px 12px;font-size:13px">Back</button></div>
-      <div class="landpick">${PACKS.map(x => `<button class="lp ${x.id === PACK ? 'on' : ''} ${landOpen(x.id) ? '' : 'locked'}" data-l="${x.id}" style="--lc:${RULERS[x.id].gem}"><b>${x.name.replace(/^The /, '')}</b>${landOpen(x.id) ? crownRow(x.id) : '<span class="lk">🔒</span>'}</button>`).join('')}</div>
+      <div class="landpick">${PACKS.map(x => `<button class="lp ${x.id === PACK ? 'on' : ''} ${landOpen(x.id) ? '' : 'locked'}" data-l="${x.id}" style="--lc:${RULERS[x.id].gem}"><b>${x.name.replace(/^The /, '')}</b><span class="land-state">${x.id===PACK?'Selected':landWon(x.id)?'Conquered':landOpen(x.id)?'Available':'Locked · clear the previous land'}</span></button>`).join('')}</div>
       ${landHero(PACK)}
       <div class="conqbar" style="--lc:${R.gem}"><span><small>${lname(PACK)}</small><b>${won ? 'Conquered' : `${n} / ${CIRCUITS.length} circuits conquered`}</b></span>
         <span class="conqpips">${CIRCUITS.map(c => `<i class="${circuitDone(PACK, c.id) ? 'on' : ''}${c.id === cur && !won ? ' cur' : ''}"></i>`).join('')}<i class="r ${won ? 'on' : rOpen ? 'cur' : ''}">♛</i></span></div>
-      <div class="rulerbox" style="--lc:${R.gem}">${rulerFace(PACK, 'card') || crownSVG(PACK, 'hard', true)}<span><small>Ruler of this land</small><b>${R.short || R.name}</b><span>${R.desc} ${won ? `You hold the <b>${landCrownName(PACK)}</b>.` : `Conquer all ${CIRCUITS.length} circuits, then defeat ${rulerShort(PACK)} to claim the <b>${landCrownName(PACK)}</b>.`}</span></span></div>
+      <div class="land-next"><div><small>${won ? 'Replay selected' : 'Your next challenge'}</small><strong>${pickC === 'ruler' ? R.name : CIRCUITS.find(c=>c.id===pickC).name}</strong></div><button class="btn" id="quickGo">${pickC === 'ruler' ? `Face ${rulerShort(PACK)}` : `Enter ${CIRCUITS.find(c=>c.id===pickC).name}`}</button></div>
+      <div class="rulerbox" style="--lc:${R.gem}">${rulerFace(PACK, 'card') || crownSVG(PACK, 'hard', true)}<span><small>Land ruler</small><b>${R.short || R.name}</b><div class="ruler-species">${R.species}</div><details><summary>Boss rules and reward</summary><p>${R.desc}</p><p>${won ? `You hold the <b>${landCrownName(PACK)}</b>.` : `Clear all ${CIRCUITS.length} circuits, then defeat ${rulerShort(PACK)} to earn the <b>${landCrownName(PACK)}</b>.`}</p></details></span></div>
       ${(() => { const c = getCarry(); if(!c) return `<div class="carrybox fresh"><b>${draftGet() ? 'Your starting army' : 'Fresh army'}</b><span>${draftGet() ? `${draftNames(draftGet().r.map(x => parseR(x).t))}.` : 'You start with a King, Rook, Bishop, Knight and 4 Pawns.'} Everything you build carries into your next circuit and land, as long as you don’t lose all your lives.</span></div>`;
         return `<div class="carrybox"><b>Your army carries over ${hearts(c.lives)}</b><span>${c.roster.length} pieces · ${c.relics.length} ${(c.relics.length === 1 ? UI.tile : UI.tiles).toLowerCase()} · ${(c.cards||[]).length} card${(c.cards||[]).length === 1 ? '' : 's'} · <b class="money">$${c.money}</b></span>
           <div class="army mini">${c.roster.map(parseR).sort((a,b) => ORDER.indexOf(a.t) - ORDER.indexOf(b.t)).map(x => `<span class="apc">${pieceSVG(x.t,'me',x.e)}</span>`).join('')}</div>
@@ -5308,7 +5304,8 @@ function circuitSelect(startLand, startCircuit){
     $('#cback').onclick = title;
     const tc = $('#trainc'); if(tc) tc.onclick = () => trainingModal(draw);
     const fb = $('#fresh'); if(fb) fb.onclick = () => { if(!fb.dataset.sure){ fb.dataset.sure = 1; fb.textContent = 'Tap again: your carried army, tiles and money will be lost'; return; } setCarry(null); draw(); };
-    $('#cgo').onclick = () => { newRun(pickC); landChapter(PACK) || landIntro(PACK); blindSelect(); };   // v154: a new Land opens with its chapter
+    $('#cgo').onclick = () => { newRun(pickC); landChapter(PACK) || landIntro(PACK); blindSelect(); };
+    $('#quickGo').onclick=()=>$('#cgo').click();   // v154: a new Land opens with its chapter
   };
   draw();
   if(coachSeen().score) coach('circuit');
@@ -9155,7 +9152,7 @@ function circuitCleared(l, cid, fresh, rebuilt){
   ccm.classList.add('ccmodal');
 }
 /* ---------- the standard ending (modular: a future true ending can branch here) ---------- */
-const ENDING_ART = 'crownless-king-crowned.webp'; // only ever shown inside playEnding()
+const ENDING_ART = 'assets/rulers/stag.webp'; // only ever shown inside playEnding()
 /* ---------- endings ----------
    Only the standard ending exists. A future hidden ending registers in ENDINGS under its own type
    (e.g. ENDINGS.true) with its own trigger; nothing about it is exposed to the player yet. */

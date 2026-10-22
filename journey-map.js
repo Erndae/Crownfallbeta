@@ -33,6 +33,9 @@ function buildJourneyNetwork(data){
  restoreLegacyCards();
  const theme=applyJourneyLand(data);
  networkData=data;networkPlan=planJourneyNetwork(data);const g=networkPlan,svg=document.querySelector('.route-overlay');
+ document.querySelector('#currentPlace').textContent=data.location==='fight'?(data.destination||'Battle location'):data.leg==='depart'||data.location==='shop'?theme.routes.supply:(data.stageNames?.[g.current-2]||'District entrance');
+ document.querySelector('#nextBattle').textContent=data.destination||data.stageNames?.[g.current-1]||'Next battle';
+ document.querySelector('#mapInstructions').textContent='Choose a highlighted road, then press Start.';
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',theme.name+' route network. Choose a reachable stop; only shop branches open shops.');
  const atlasNodes=[];for(let i=0;i<=g.count;i++)atlasNodes.push({...g.fight(i),id:'fight-'+i,type:i?'fight':'entry',name:data.stageNames?.[i-1]||'District entrance',boss:i===g.count});
  for(const l of g.links)atlasNodes.push({...l.b,id:l.i+'-'+l.route,type:l.route,name:theme.routes[l.route]});
@@ -70,9 +73,11 @@ function buildJourneyNetwork(data){
 }
 function sizeJourneyNetwork(){
  const viewport=document.querySelector('#mapWindow'),world=document.querySelector('#mapWorld');
- world.style.width=(networkOverview?viewport.clientWidth:Math.max(viewport.clientWidth,networkPlan.width*viewport.clientHeight/networkPlan.height))+'px';
+ const mobile=window.innerWidth<=800,height=networkOverview?viewport.clientHeight:(mobile?viewport.clientHeight:Math.max(viewport.clientHeight,600));
+ world.style.height=height+'px';
+ world.style.width=(networkOverview?viewport.clientWidth:Math.max(viewport.clientWidth,networkPlan.width*height/networkPlan.height))+'px';
 }
-function networkCamera(x,smooth=false){
+function networkCamera(x,smooth=false,y=networkPlan.start.y){
  const viewport=document.querySelector('#mapWindow'),world=document.querySelector('#mapWorld');
- viewport.scrollTo({left:Math.max(0,x/networkPlan.width*world.clientWidth-viewport.clientWidth*.35),behavior:smooth?'smooth':'instant'});
+ viewport.scrollTo({left:Math.max(0,x/networkPlan.width*world.clientWidth-viewport.clientWidth*.25),top:Math.max(0,y/networkPlan.height*world.clientHeight-viewport.clientHeight*.52),behavior:smooth?'smooth':'instant'});
 }

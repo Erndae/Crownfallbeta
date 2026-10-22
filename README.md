@@ -55,3 +55,9 @@ Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 s
 ## Distinct land map artwork
 
 `journey-atlas-themes.js` supplies separate terrain, buildings, landmarks and road surfaces for each land. Crown City has dense brick/glass blocks, roof equipment, lit storefronts, traffic, crossings and transit tracks; its rooftop and midnight circuits emphasize towers and neon. The Iron Kingdom has mountain ridges, castle walls, pine woods, timber houses, caravan stalls and stone keeps. The Olympian Court uses marble temples, columns, olive groves and an Aegean coast. The Shattered Realm has floating islands, crystalline spires, portals and rune bridges over a starry void. The Fallen Throne has fractured bastions, fallen masonry, dead trees and ember fissures. Named woods, fields and bridge/ford locations receive corresponding landmarks. Every land continues to use the exact saved travel graph and location coordinates.
+
+## Animal rulers and clearer navigation
+
+The five land rulers now have humanoid animal portraits: Vex is a red fox, Aldric a lion, Athena a barn owl, Morwen a raven, and the Crownless King a stag. Names, rules and save identifiers are preserved. `assets/rulers/` contains the generated WebP portraits and art provenance; `game-clarity.css` sets their framing across land selection, dialogue and introductions. The ending also uses the stag artwork.
+
+Land selection shows every land name without horizontal clipping, explains locked lands, and places the selected challenge’s Enter button above the army details. Boss rules and rewards expand on demand. The journey map displays current location and next battle, enlarges reachable stops, matches their numbers to readable choice cards, quiets distant labels, provides a My location recenter button, and keeps the Start/Continue action accessible on phones. Existing journey records remain compatible.

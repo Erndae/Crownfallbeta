@@ -103,3 +103,15 @@ body[data-journey-land=greek] .cartographic-map .node-label,body[data-journey-la
 body[data-journey-land=fantasy] .cartographic-map .node-label,body[data-journey-land=fantasy] .cartographic-map .node-detail{stroke:#232c45}
 body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-land=throne] .cartographic-map .node-detail{stroke:#302632}
 .atlas-district-labels text{paint-order:stroke;stroke:#14212c;stroke-width:5px;stroke-linejoin:round;letter-spacing:3px}
+
+/* A clear current location, numbered choices and a consistent travel action. */
+.journey-summary{display:grid;grid-template-columns:1fr 1fr;gap:12px;padding:15px 17px;margin-bottom:16px;background:#1b282c;border:1px solid #67706a;border-radius:5px;scroll-margin-top:14px}
+.journey-summary small{display:block;color:#b6bcb1;font-size:10px;letter-spacing:1.5px;margin-bottom:5px}.journey-summary strong{display:block;font-size:17px;color:#f4e6c6;line-height:1.35}.journey-summary>div:first-child{border-left:3px solid #eacb8f;padding-left:10px}
+.network-toolbar>span{font-size:13px;color:#e0e0d4;line-height:1.5}.network-toolbar button{min-height:42px;font-size:12px}
+.choice-heading{font:700 23px/1.3 var(--display);letter-spacing:.3px;text-transform:none;margin:24px 0 12px}
+.route-card{padding:16px 16px 0}.route-card h3{font-size:25px;line-height:1.15;min-height:0}.route-card p{font-size:13px;color:#e1e1d4;line-height:1.5;margin:8px 0 12px}.route-card .route-bottom{font-size:11px;color:#b6bbb1}.route-card-top{font-size:11px}
+.cartographic-map .node-label{font-size:29px;font-weight:700}.cartographic-map .node-detail{font-size:22px}.cartographic-map .node-symbol{font-size:40px}.cartographic-map .you-label{font-size:23px;letter-spacing:1px;stroke-width:2px}
+.cartographic-map .network-node.context-stop{opacity:.36}.cartographic-map .context-stop .node-label,.cartographic-map .context-stop .node-detail{display:none}.cartographic-map .network-node.current-stop{opacity:1}
+.cartographic-map .network-node.reachable circle{stroke-width:5;fill:#172630}.cartographic-map .route-line{stroke-width:7}.cartographic-map .route-track.selected .route-line{stroke-width:11}
+.journey-panel .campaign-callout,.journey-panel .panel-rule,.journey-panel .world-progress{display:none}.journey-panel .route-note{margin-bottom:0}
+@media(max-width:800px){.journey-panel{display:block;width:100%}.journey-panel>.panel-copy{max-width:none}.journey-panel>.route-note{margin:16px 0 0}.journey-summary{padding:12px;gap:10px}.journey-summary strong{font-size:15px}.stage-strip{display:none}.page-heading{margin-bottom:17px}.network-toolbar>span{font-size:12px}.map-window{height:440px}.path-actions .travel-status{white-space:normal;font-size:11px}.path-action-label{font-size:16px}.route-cards{grid-template-columns:1fr}.route-card{display:grid;grid-template-columns:1fr;gap:0;padding:14px 16px 0}.route-card h3{font-size:24px;margin:7px 0 0}.route-card p{font-size:14px;margin:6px 0 10px}.route-card .route-bottom{min-height:0;font-size:11px;padding:9px 0}.under-map{font-size:10px}.network-navigation>span{font-size:10px}}
