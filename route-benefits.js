@@ -17,6 +17,10 @@ function cityRouteTarget(t){ const r = cityRoute(); return r === 'safer' ? Math.
 function cityRouteReward(){ return cityRoute() === 'risky' ? 8 : 0; }
 function cityRouteNote(){
   const r = cityRoute();
+  if(cityRouteRecord()?.networkVersion===2){
+    const effects={safer:'Shelter scouted · 20% lower target.',risky:'Dangerous approach · 20% higher target; +$8 on victory.',road:'Direct approach · standard target and reward.'};
+    return `<p class="training-note">${journeyStagePlace(RUN.land,RUN.circuit,RUN.ante)} · ${effects[r]||effects.road}</p>`;
+  }
   const notes = {safer:'Back alley · 20% lower score target for this stage.', supply:'Market street · $5 supplies added to your wallet.', risky:'Rooftop crossing · 20% higher score target. Win this stage for an extra $8.'};
   return r ? `<p class="training-note">${notes[r]}</p>` : '';
 }

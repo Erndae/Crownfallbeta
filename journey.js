@@ -15,6 +15,7 @@ function persist(){try{localStorage.setItem(MAP_KEY,JSON.stringify({selected,red
 function send(type,extra={}){frame.contentWindow?.postMessage({type,...extra},location.origin)}
 function applyMotion(){document.body.classList.toggle('reduce-motion',reduced);$('#motionToggle').textContent=reduced?'Motion reduced':'Reduce motion';$('#motionToggle').setAttribute('aria-pressed',String(reduced));persist()}
 function selectRoute(id){
+ if(networkData.networkVersion===2)return selectWorldStop(id);
  if(traveling||(pendingJourney&&committed)||!ROUTES[id])return;selected=id;committed=false;persist();const r=ROUTES[id];$('#routeActionLabel').textContent=r.title;
  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.toggle('selected',el.dataset.route===id);if(el.matches('.route-card'))el.setAttribute('aria-pressed',String(el.dataset.route===id))});
  $('.route-overlay').classList.add('has-selection');$('#routeNote').style.borderColor=r.color;$('.note-label').style.color=r.color;$('.note-label').textContent=r.label;$('#routeNote p').textContent=r.description;
@@ -29,6 +30,7 @@ $('#mapOverview').onclick=()=>{networkOverview=!networkOverview;sizeJourneyNetwo
 new ResizeObserver(()=>{sizeJourneyNetwork();if(!traveling)resetCamera();}).observe($('#mapWindow'));
 $('#motionToggle').onclick=()=>{reduced=!reduced;applyMotion()};
 async function walk(){
+ if(networkData.networkVersion===2)return walkWorldStop();
  if(traveling)return;
  if(!pendingJourney)return launch('campaign');
  if(!selected)return;
@@ -45,6 +47,9 @@ document.querySelectorAll('[data-launch]').forEach(el=>el.onclick=()=>launch(el.
 $('#backToMap').onclick=()=>{send('journey-pause');hideGame()};$('#gameMenu').onclick=()=>send('journey-menu');$('#navJourney').onclick=hideGame;
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow)return;const d=e.data;if(!d||typeof d!=='object')return;
  if(d.type==='crownfall-ready'){frameReady=true;if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
+ if(d.type==='journey-request'&&d.networkVersion===2){requestWorldJourney(d);return;}
+ if(d.type==='journey-committed'&&d.networkVersion===2&&pendingJourney?.key===d.key){traveling=false;committed=false;selectWorldStop(d.node);committed=true;walkWorldStop();return;}
+ if(d.type==='journey-enter'&&pendingJourney?.key===d.key){pendingJourney=null;traveling=false;committed=false;buildJourneyNetwork({...networkData,record:d.record,location:d.location});$('#setOff').disabled=false;$('#setOffText').textContent='Continue Campaign';$('#routeActionLabel').textContent='At '+networkPlan.start.name;showGame('campaign');return;}
  if(d.type==='journey-request'){
   travelToken++;traveling=false;committed=false;pendingJourney={key:d.key,leg:d.leg||'approach'};buildJourneyNetwork(d);
   selected=null;persist();$('#routeActionLabel').textContent=d.leg==='depart'?'Ready for the next fight':'Choose your next stop';
@@ -75,7 +80,7 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
  if(d.type==='journey-error'){traveling=false;$('#setOff').disabled=false;$('#setOffText').textContent='Choose your road';$('#travelStatus').textContent=d.message||'Return to the game to continue.';}
 });
 const dialog=$('#infoDialog');$('.dialog-close').onclick=()=>dialog.close();dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close()});
-function help(){ $('#dialogContent').innerHTML='<div class="eyebrow">MAKE YOUR MOVE</div><h2>Chess, with a crown<br>on the line.</h2><p>Build a named army and cross five Lands. Win each battle by reaching its score target or delivering checkmate.</p><ul><li><b>Campaign:</b> assemble your army, train your pieces, and conquer 85 story battles.</li><li><b>The Gauntlet:</b> an independent survival run with three lives, arena equipment, and endless waves.</li><li><b>Journey:</b> choose a path and watch your King travel between every Campaign fight, including new circuits and Ruler battles.</li></ul><p>Back alley: 20% lower next-fight target. Market stop: visit the shop and collect $5. Shops only open on market branches; leaving a shop returns you to the map. Rooftop crossing: 20% higher next-fight target and $8 extra on victory. Choose between Campaign fights; your choice is locked when you set off. Bonuses cannot be collected again by refreshing.</p><p>Your progress saves automatically in this browser. The game menu includes full rules and save options.</p>';dialog.showModal()}
+function help(){ $('#dialogContent').innerHTML='<div class="eyebrow">MAKE YOUR MOVE</div><h2>Chess, with a crown<br>on the line.</h2><p>Build a named army and cross five Lands. Win each battle by reaching its score target or delivering checkmate.</p><ul><li><b>Campaign:</b> assemble your army, train your pieces, and conquer 85 story battles.</li><li><b>The Gauntlet:</b> an independent survival run with three lives, arena equipment, and endless waves.</li><li><b>Journey:</b> choose a path and watch your King travel between every Campaign fight, including new circuits and Ruler battles.</li></ul><p>Follow connected locations across each circuit. Shelters lower the next fight’s target by 20%; danger stops raise it by 20% and award $8 extra on victory. The last shelter or danger you reach sets that fight’s approach. Shops grant $5 and open only when visited; caches grant $3. Junctions unlock further connections. You can skip shops via other paths. Every departure is saved, and refreshing cannot repeat rewards.</p><p>Your progress saves automatically in this browser. The game menu includes full rules and save options.</p>';dialog.showModal()}
 $('#help').onclick=help;
 $('#settings').onclick=()=>{ $('#dialogContent').innerHTML='<div class="eyebrow">YOUR EXPERIENCE</div><h2>Settings</h2><div class="setting-row"><span>Reduce motion</span><button id="dialogMotion">'+(reduced?'On':'Off')+'</button></div><p>Music, sound, and gameplay speed can be adjusted from the game menu.</p><p>Campaign and Gauntlet progress are stored separately on this device.</p>';dialog.showModal();$('#dialogMotion').onclick=e=>{reduced=!reduced;applyMotion();e.target.textContent=reduced?'On':'Off'}};
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!shell.hidden&&!dialog.open){send('journey-pause');hideGame()}});

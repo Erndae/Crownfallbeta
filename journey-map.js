@@ -21,7 +21,7 @@ function planJourneyNetwork(data={}){
  const start=data.location==='fight'?fight(current):data.location==='shop'||data.leg==='depart'?way(current,'supply'):fight(current-1);
  return {width,height,count,current,links,start,fight,way};
 }
-let networkData={land:'street',stage:2,stages:4},networkPlan=planJourneyNetwork(networkData),networkOverview=false;
+let networkData={land:'street',circuitId:'downtown',stage:2,stages:4,networkVersion:2},networkPlan=planJourneyNetwork(networkData),networkOverview=false;
 function networkElement(tag,attrs={},text){
  const el=document.createElementNS('http://www.w3.org/2000/svg',tag);
  for(const [k,v] of Object.entries(attrs))el.setAttribute(k,v);
@@ -29,6 +29,8 @@ function networkElement(tag,attrs={},text){
  return el;
 }
 function buildJourneyNetwork(data){
+ if(data.networkVersion===2)return buildWorldNetwork(data);
+ restoreLegacyCards();
  const theme=applyJourneyLand(data);
  networkData=data;networkPlan=planJourneyNetwork(data);const g=networkPlan,svg=document.querySelector('.route-overlay');
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',theme.name+' route network. Choose a reachable stop; only shop branches open shops.');

@@ -6,7 +6,7 @@
 <meta name="theme-color" content="#111315"><meta name="description" content="Crownfall. A chess roguelike through five unforgettable Lands. Choose your road, build your army, and claim the Crowns.">
 <title>Crownfall — The road to a crown</title>
 <link rel="icon" href="cf-favicon-32.png"><link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800;900&family=DM+Sans:wght@400;500;600;700&family=Permanent+Marker&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="journey.css"><script src="journey-lands.js" defer></script><script src="journey-map.js" defer></script><script src="journey.js" defer></script>
+<link rel="stylesheet" href="journey.css"><script src="journey-world.js" defer></script><script src="journey-lands.js" defer></script><script src="journey-map.js" defer></script><script src="journey-world-ui.js" defer></script><script src="journey.js" defer></script>
 </head>
 <body class="game-open">
 <svg class="symbols" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><defs>
@@ -25,12 +25,12 @@
 <div class="workspace">
 <section class="map-column" aria-label="Downtown journey map">
 <div class="stage-strip" aria-label="Circuit stages"><div class="stage current" data-stage="1"><span>01</span><div><small>STAGE ONE</small><b>Introduction</b></div></div><div class="stage-line"></div><div class="stage" data-stage="2"><span>02</span><div><small>STAGE TWO</small><b>The Rival</b></div></div><div class="stage-line"></div><div class="stage" data-stage="3"><span>03</span><div><small>STAGE THREE</small><b>Elite Challenge</b></div></div><div class="stage-line"></div><div class="stage" data-stage="4"><svg><use href="#crown"/></svg><div><small>STAGE FOUR</small><b>Circuit Boss</b></div></div></div>
-<div class="network-toolbar"><div><span class="legend-battle">● Fight</span><span class="legend-shop">$ Shop</span><span class="legend-safe">◇ Safe</span><span class="legend-risk">! Danger</span></div><button id="mapOverview">View whole circuit</button></div>
+<div class="network-toolbar"><div><span class="legend-battle">● Fight</span><span class="legend-shop">$ Shop</span><span class="legend-shop">+ Cache</span><span class="legend-safe">◇ Shelter</span><span class="legend-risk">! Danger</span></div><button id="mapOverview">View whole circuit</button></div>
 <div class="map-window" id="mapWindow"><div class="map-world" id="mapWorld">
 <img class="map-art" src="downtown-journey.webp" alt="An ink-painted Crown City block, with magenta brick buildings, an amber-lit market, rooftop catwalks and a sheltered lower alley." fetchpriority="high">
 <div class="map-vignette"></div>
 <svg class="route-overlay" aria-label="Circuit route network"></svg>
-</div><div class="map-topline"><span id="journeyLocation">DOWNTOWN · ON THE ROAD</span></div><div class="map-caption"><span id="mapCaption">THREE ROADS. YOUR CALL.</span><small>Tap a path to explore</small></div></div>
+</div><div class="map-topline"><span id="journeyLocation">DOWNTOWN · ON THE ROAD</span></div><div class="map-caption"><span id="mapCaption">YOUR NEXT CROSSROADS.</span><small>Tap a path to explore</small></div></div>
 <div class="network-navigation"><button id="panLeft" aria-label="Pan map left">‹ Earlier stops</button><span>Swipe to explore · Lit branches are reachable</span><button id="panRight" aria-label="Pan map right">Later stops ›</button></div>
 <div class="path-actions" aria-label="Route travel controls"><div class="path-action-label" id="routeActionLabel">Your next stop</div><button class="set-off" id="setOff"><span id="setOffText">Continue Campaign</span><svg><use href="#arrow"/></svg></button><p class="travel-status" id="travelStatus" aria-live="polite">Select a stop on the map or a route below.</p></div>
 <div class="route-cards" aria-label="Route choices">

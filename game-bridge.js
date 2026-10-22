@@ -12,11 +12,13 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   };
   function journeyRequest(){
     const stop = cityRouteRecord();
+    if(stop && stop.networkVersion === 2) return worldRequest();
+    if(!stop){ RUN.journeyPreview1 = RUN.journeyPreview1 || {}; RUN.journeyPreview1[journeyKey()] = {networkVersion:2, position:'fight-'+(RUN.circuit==='ruler'?0:RUN.ante-1), route:'road', benefitsVersion:1, arrived:false, visited:[], edges:[]}; return worldRequest(); }
     if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
     RUN.inShop = false; B = null; save(); sceneMusic('land');
     journeyPending = journeyKey();
     const r = cityRouteRecord();
-    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
+    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, circuitId:RUN.circuit, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).filter(([k])=>k.startsWith(`${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|`)).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
   }
   blindSelect = function () {
     if(MODE === 'campaign' && RUN && !MATCH && !RUN.gauntlet) roadStart();
@@ -33,6 +35,14 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   shop = function(){
     if(MODE !== 'campaign' || !RUN || RUN.gauntlet || MATCH) return journeyOriginalShop();
     const r = cityRouteRecord();
+    if(r && r.networkVersion === 2){
+      if(!r.atShop || r.arrived){ RUN.inShop=false;save();return blindSelect(); }
+      const result=journeyOriginalShop();
+      const heading=document.querySelector('.shoptitle h2');
+      if(heading){const place=journeyGraph(worldData()).byId[r.position];heading.textContent=place.short;heading.style.textTransform='capitalize';heading.style.fontSize='24px';const district=document.createElement('small');district.textContent=place.district;district.style.cssText='display:block;font:12px/1.4 var(--body, sans-serif);text-transform:none;margin-top:4px';heading.append(district);}
+      const next=$('#next');if(next){next.textContent='Leave shop · choose next stop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
+      return result;
+    }
     if(!r || r.route !== 'supply' || !r.shopVisited || r.shopLeft || r.arrived){
       RUN.inShop = false; save(); return blindSelect();
     }
@@ -43,6 +53,41 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }; }
     return result;
   };
+  function worldData(){
+    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
+  }
+  function worldRequest(){
+    const r=cityRouteRecord();
+    if(r.atShop) return shop();
+    RUN.inShop=false;B=null;journeyPending=journeyKey();save();sceneMusic('land');
+    const prefix=`${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|`;
+    journeyPost('journey-request',{...worldData(),networkVersion:2,key:journeyPending,stages:nStages(),landName:(PACKS.find(p=>p.id===RUN.land)||{}).name,circuit:CIR().name,destination:stageName(RUN.ante),boss:RUN.circuit==='ruler'?RULERS[RUN.land].name:MINIS[RUN.land][RUN.circuit],history:Object.fromEntries(Object.entries(RUN.journeyPreview1||{}).filter(([k])=>k.startsWith(prefix))),stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
+  }
+  function worldCommit(d){
+    const r=cityRouteRecord(),g=journeyGraph(worldData());
+    if(!r.hop){
+      if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      r.hop=d.node;save();
+    }
+    journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
+  }
+  function worldArrive(d){
+    const r=cityRouteRecord();
+    // The saved edge is the authority. Replayed/stale arrivals cannot move the army or pay again.
+    if(!r.hop || d.node!==r.hop)return;
+    const g=journeyGraph(worldData()),node=g.byId[r.hop];
+    if(!node || !g.active.some(e=>e.to===node.id))return;
+    r.edges.push([r.position,node.id]);r.position=node.id;r.hop=null;
+    if(!r.visited.includes(node.id)){
+      r.visited.push(node.id);
+      if(node.type==='supply')RUN.money+=5;
+      if(node.type==='cache')RUN.money+=3;
+      if(node.type==='safer'||node.type==='risky'){r.route=node.type;RUN.fightTarget=null;}
+    }
+    if(node.type==='fight'){r.arrived=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'fight',record:r});return journeyOriginalSelect();}
+    if(node.type==='supply'){r.atShop=true;RUN.shop=null;RUN.inShop=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'shop',record:r});return shop();}
+    save();return worldRequest();
+  }
   function journeyContinue(){
     if(RUN) return B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect());
     if(draftGet()) return draftResume();
@@ -60,6 +105,14 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }
     if(d.type === 'journey-menu') return title();
     if(d.type === 'journey-pause') {if(RUN) save(); sceneMusic('land'); return;}
+    if(d.type === 'journey-commit' && cityRouteRecord()?.networkVersion===2){
+      if(!journeyEligible() || d.key!==journeyPending || d.key!==journeyKey())return journeyPost('journey-error',{message:'This journey has changed. Continue from the game menu.'});
+      return worldCommit(d);
+    }
+    if(d.type === 'journey-arrive' && cityRouteRecord()?.networkVersion===2){
+      if(journeyEligible() && d.key===journeyPending && d.key===journeyKey())return worldArrive(d);
+      return;
+    }
     if(d.type === 'journey-commit') {
       if(!journeyEligible() || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};

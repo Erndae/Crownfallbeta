@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script src="beta-storage.js"></script>
+<script src="journey-world.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1c1c1e">
@@ -3204,7 +3205,7 @@ const nStages = c => (c !== undefined ? c : RUN && RUN.circuit) === 'ruler' ? ST
 // The Ruler's Road is one battle: it starts at its final round, so the Ruler keeps the same target, army and rules as before.
 const rulerRoad = () => !!(RUN && RUN.circuit === 'ruler');
 function roadStart(){ if(rulerRoad() && !B && (RUN.ante < nStages() || RUN.blind < 2)){ RUN.ante = nStages(); RUN.blind = 2; } }
-const stageName = a => { const st = LV().stages; if(RUN && RUN.circuit !== 'ruler') return st[CIRCUIT_STAGE_IDX[(a - 1) % CIRCUIT_STAGES]]; return st[(a - 1) % STAGES]; };
+const stageName = a => { if(MODE === 'campaign' && RUN && !RUN.gauntlet && !MATCH && JOURNEY_WORLD[RUN.land]) return journeyStagePlace(RUN.land,RUN.circuit,a); const st = LV().stages; if(RUN && RUN.circuit !== 'ruler') return st[CIRCUIT_STAGE_IDX[(a - 1) % CIRCUIT_STAGES]]; return st[(a - 1) % STAGES]; };
 const champName = () => LV().champ;
 function enterLand(){ if(!RUN) return; if(RUN.match){ RUN.land = 'arena'; arenaOn(); return; } if(!RUN.land) RUN.land = PACK; if(RUN.bosses){ const n = nStages(); if(RUN.bosses.length > n) RUN.bosses = RUN.bosses.slice(0, n); while(RUN.bosses.length < n) RUN.bosses.push(pick(BOSSES).id); RUN.bosses[n-1] = RUN.circuit === 'ruler' ? 'ruler' : 'mini'; gmPlace(); if(!RUN.won && RUN.ante > n){ RUN.ante = n; RUN.blind = 2; } } if(PACK !== RUN.land){ setPack(RUN.land); musicRestart(); } }
 function setPack(id){ PACK = id; document.body.dataset.pack = gArenaOn() ? 'gauntlet' : id; if(gArenaOn()) document.body.dataset.gtier = gTier(gWave()).id; applyLandTheme(); applyNames(id); try{ localStorage.setItem('crownfall-pack', id); }catch(e){} }
@@ -8864,7 +8865,7 @@ function winBlind(){
       <div class="kv"><span>${RUN.circuit === 'ruler' ? 'Ruler reward' : 'Stage reward'}${debtNote ? ` (${C('loanshark').name} took it)` : ''}</span><b class="money">$${reward}</b></div>
       ${blitzOn() ? `<div class="kv"><span>${blitzLeft} moves left ($${B.hustle ? 2 : 1} each)</span><b class="money">$${movesBonus}</b></div>` : `<div class="kv"><span>Moves used</span><b>${B.moveCount != null ? B.moveCount : B.movesStart - B.moves}</b></div>`}
       <div class="kv"><span>Savings bonus ($2 per $5 saved, max $${isC('midnight') ? 12 : 10})</span><b class="money">$${interest}</b></div>
-      ${routeBonus ? `<div class="kv"><span>Rooftop route bonus</span><b class="money">$${routeBonus}</b></div>` : ''}
+      ${routeBonus ? `<div class="kv"><span>Danger route bonus</span><b class="money">$${routeBonus}</b></div>` : ''}
       ${piggy ? `<div class="kv"><span>Piggy Bank</span><b class="money">$${piggy}</b></div>` : ''}
       ${mateBonus ? `<div class="kv"><span>Checkmate bonus</span><b class="money">$${mateBonus}</b></div>` : ''}
       ${chal.cash ? `<div class="kv"><span>Challenge · ${chal.name}${chal.swap ? ' · +1 Swap next round' : ''}</span><b class="money">$${chal.cash}</b></div>` : ''}
@@ -10016,6 +10017,10 @@ function cityRouteTarget(t){ const r = cityRoute(); return r === 'safer' ? Math.
 function cityRouteReward(){ return cityRoute() === 'risky' ? 8 : 0; }
 function cityRouteNote(){
   const r = cityRoute();
+  if(cityRouteRecord()?.networkVersion===2){
+    const effects={safer:'Shelter scouted · 20% lower target.',risky:'Dangerous approach · 20% higher target; +$8 on victory.',road:'Direct approach · standard target and reward.'};
+    return `<p class="training-note">${journeyStagePlace(RUN.land,RUN.circuit,RUN.ante)} · ${effects[r]||effects.road}</p>`;
+  }
   const notes = {safer:'Back alley · 20% lower score target for this stage.', supply:'Market street · $5 supplies added to your wallet.', risky:'Rooftop crossing · 20% higher score target. Win this stage for an extra $8.'};
   return r ? `<p class="training-note">${notes[r]}</p>` : '';
 }
@@ -10033,11 +10038,13 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   };
   function journeyRequest(){
     const stop = cityRouteRecord();
+    if(stop && stop.networkVersion === 2) return worldRequest();
+    if(!stop){ RUN.journeyPreview1 = RUN.journeyPreview1 || {}; RUN.journeyPreview1[journeyKey()] = {networkVersion:2, position:'fight-'+(RUN.circuit==='ruler'?0:RUN.ante-1), route:'road', benefitsVersion:1, arrived:false, visited:[], edges:[]}; return worldRequest(); }
     if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
     RUN.inShop = false; B = null; save(); sceneMusic('land');
     journeyPending = journeyKey();
     const r = cityRouteRecord();
-    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
+    journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, circuitId:RUN.circuit, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).filter(([k])=>k.startsWith(`${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|`)).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
   }
   blindSelect = function () {
     if(MODE === 'campaign' && RUN && !MATCH && !RUN.gauntlet) roadStart();
@@ -10054,6 +10061,14 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   shop = function(){
     if(MODE !== 'campaign' || !RUN || RUN.gauntlet || MATCH) return journeyOriginalShop();
     const r = cityRouteRecord();
+    if(r && r.networkVersion === 2){
+      if(!r.atShop || r.arrived){ RUN.inShop=false;save();return blindSelect(); }
+      const result=journeyOriginalShop();
+      const heading=document.querySelector('.shoptitle h2');
+      if(heading){const place=journeyGraph(worldData()).byId[r.position];heading.textContent=place.short;heading.style.textTransform='capitalize';heading.style.fontSize='24px';const district=document.createElement('small');district.textContent=place.district;district.style.cssText='display:block;font:12px/1.4 var(--body, sans-serif);text-transform:none;margin-top:4px';heading.append(district);}
+      const next=$('#next');if(next){next.textContent='Leave shop · choose next stop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
+      return result;
+    }
     if(!r || r.route !== 'supply' || !r.shopVisited || r.shopLeft || r.arrived){
       RUN.inShop = false; save(); return blindSelect();
     }
@@ -10064,6 +10079,41 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }; }
     return result;
   };
+  function worldData(){
+    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
+  }
+  function worldRequest(){
+    const r=cityRouteRecord();
+    if(r.atShop) return shop();
+    RUN.inShop=false;B=null;journeyPending=journeyKey();save();sceneMusic('land');
+    const prefix=`${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|`;
+    journeyPost('journey-request',{...worldData(),networkVersion:2,key:journeyPending,stages:nStages(),landName:(PACKS.find(p=>p.id===RUN.land)||{}).name,circuit:CIR().name,destination:stageName(RUN.ante),boss:RUN.circuit==='ruler'?RULERS[RUN.land].name:MINIS[RUN.land][RUN.circuit],history:Object.fromEntries(Object.entries(RUN.journeyPreview1||{}).filter(([k])=>k.startsWith(prefix))),stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
+  }
+  function worldCommit(d){
+    const r=cityRouteRecord(),g=journeyGraph(worldData());
+    if(!r.hop){
+      if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      r.hop=d.node;save();
+    }
+    journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
+  }
+  function worldArrive(d){
+    const r=cityRouteRecord();
+    // The saved edge is the authority. Replayed/stale arrivals cannot move the army or pay again.
+    if(!r.hop || d.node!==r.hop)return;
+    const g=journeyGraph(worldData()),node=g.byId[r.hop];
+    if(!node || !g.active.some(e=>e.to===node.id))return;
+    r.edges.push([r.position,node.id]);r.position=node.id;r.hop=null;
+    if(!r.visited.includes(node.id)){
+      r.visited.push(node.id);
+      if(node.type==='supply')RUN.money+=5;
+      if(node.type==='cache')RUN.money+=3;
+      if(node.type==='safer'||node.type==='risky'){r.route=node.type;RUN.fightTarget=null;}
+    }
+    if(node.type==='fight'){r.arrived=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'fight',record:r});return journeyOriginalSelect();}
+    if(node.type==='supply'){r.atShop=true;RUN.shop=null;RUN.inShop=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'shop',record:r});return shop();}
+    save();return worldRequest();
+  }
   function journeyContinue(){
     if(RUN) return B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect());
     if(draftGet()) return draftResume();
@@ -10081,6 +10131,14 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }
     if(d.type === 'journey-menu') return title();
     if(d.type === 'journey-pause') {if(RUN) save(); sceneMusic('land'); return;}
+    if(d.type === 'journey-commit' && cityRouteRecord()?.networkVersion===2){
+      if(!journeyEligible() || d.key!==journeyPending || d.key!==journeyKey())return journeyPost('journey-error',{message:'This journey has changed. Continue from the game menu.'});
+      return worldCommit(d);
+    }
+    if(d.type === 'journey-arrive' && cityRouteRecord()?.networkVersion===2){
+      if(journeyEligible() && d.key===journeyPending && d.key===journeyKey())return worldArrive(d);
+      return;
+    }
     if(d.type === 'journey-commit') {
       if(!journeyEligible() || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};

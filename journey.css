@@ -63,3 +63,15 @@ body[data-journey-land] .world-progress .current{color:var(--pink);text-shadow:0
 body[data-journey-land=fantasy] .network-grid{stroke:#d0a9e51a;stroke-dasharray:3 15}
 body[data-journey-land=greek] .map-vignette{background:linear-gradient(90deg,#13272d85,#18333818,#13272d85)}
 body[data-journey-land=throne] .map-vignette{background:linear-gradient(90deg,#25111f90,#25111f30,#25111f90)}
+
+/* Named districts and varied, multi-stop routes. */
+.world-region rect{fill:#0e18231a;stroke:#d3c09c25;stroke-width:2;stroke-dasharray:12 16}
+.world-region text{fill:#d3c09c88;font:700 22px var(--display);letter-spacing:3px}
+.network-node.current-stop{opacity:1}.network-node.cache{color:var(--amber)}
+.route-cards{grid-template-columns:repeat(auto-fit,minmax(165px,1fr))}
+.route-card .route-bottom{display:block;line-height:1.5;min-height:42px}
+.route-card-top{font-size:10px;font-weight:700;letter-spacing:1px}
+.route-card h3{text-transform:capitalize}.node-label{text-transform:capitalize}
+.stage-strip{flex-wrap:wrap}.stage{flex:1;min-width:0}.stage b{white-space:normal;line-height:1.3}
+.network-node.locked{opacity:.55}.network-node.entry{opacity:.8}
+@media(max-width:540px){.route-cards{grid-template-columns:repeat(2,minmax(0,1fr))}.route-card h3{font-size:22px;min-height:0}.route-card p{font-size:11px}.route-bottom{font-size:9px}.stage b{font-size:9px}.map-window{height:420px}.network-node.reachable circle{filter:none}}

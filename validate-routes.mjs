@@ -3,16 +3,17 @@ import vm from 'node:vm';
 import assert from 'node:assert/strict';
 const helpers=readFileSync('route-benefits.js','utf8'),bridge=readFileSync('game-bridge.js','utf8'),game=readFileSync('game.html','utf8');
 assert(game.includes(helpers+bridge));
-function setup(run={land:'street',circuit:'downtown',ante:2,blind:2,money:10}){
+function setup(run={land:'street',circuit:'downtown',ante:2,blind:2,money:10},legacyRoute='safer'){
+ if(!run.journeyPreview1)run.journeyPreview1={[`0|${run.land}|${run.circuit}|${run.ante}`]:{route:legacyRoute,arrived:false,networkVersion:1}};
  const handlers={},posts=[];let starts=0,selects=0,shops=0;const next={};
  const parent={postMessage:m=>posts.push(m)};
- const c={MODE:'campaign',RUN:run,B:null,MATCH:null,ACH:{},window:{parent,addEventListener:(t,f)=>handlers[t]=f},location:{origin:'https://example.com',search:'?journey=1'},URLSearchParams,blindSelect(){selects++},startBlind(){starts++},shop(){shops++;c.RUN.inShop=true;c.RUN.shop=c.RUN.shop||[];},$:()=>next,modeIntent(){},save(){},sceneMusic(kind){c.musicScene=kind;},title(){},roadStart(){},nStages:()=>run.circuit==='ruler'?6:4,PACKS:[{id:run.land,name:run.land}],CIR:()=>({name:run.circuit}),stageName:n=>'Fight '+n};
- vm.createContext(c);vm.runInContext(helpers+bridge,c);
+ const c={MINIS:Object.fromEntries(['street','medieval','greek','fantasy','throne'].map(l=>[l,{downtown:'Boss',harbor:'Boss'}])),RULERS:Object.fromEntries(['street','medieval','greek','fantasy','throne'].map(l=>[l,{name:'Ruler'}])),MODE:'campaign',RUN:run,B:null,MATCH:null,ACH:{},window:{parent,addEventListener:(t,f)=>handlers[t]=f},location:{origin:'https://example.com',search:'?journey=1'},URLSearchParams,blindSelect(){selects++},startBlind(){starts++},shop(){shops++;c.RUN.inShop=true;c.RUN.shop=c.RUN.shop||[];},$:()=>next,modeIntent(){},save(){},sceneMusic(kind){c.musicScene=kind;},title(){},roadStart(){},nStages:()=>run.circuit==='ruler'?6:4,PACKS:[{id:run.land,name:run.land}],CIR:()=>({name:run.circuit}),stageName:n=>'Fight '+n};
+ vm.createContext(c);vm.runInContext(readFileSync('journey-world.js','utf8')+helpers+bridge,c);
  const send=d=>handlers.message({source:parent,origin:c.location.origin,data:d});
  return {c,send,posts,key:`0|${run.land}|${run.circuit}|${run.ante}`,run:s=>vm.runInContext(s,c),starts:()=>starts,selects:()=>selects,shops:()=>shops,next};
 }
 for(const [route,target,reward] of [['safer',800,0],['supply',1000,0],['risky',1200,8]]){
- let h=setup();h.run('blindSelect()');assert.equal(h.posts.at(-1).type,'journey-request');assert.equal(h.c.musicScene,'land');
+ let h=setup(undefined,route);h.run('blindSelect()');assert.equal(h.posts.at(-1).type,'journey-request');assert.equal(h.c.musicScene,'land');
  h.send({type:'journey-commit',key:h.key,route});assert.equal(h.run('cityRouteTarget(1000)'),target);assert.equal(h.run('cityRouteReward()'),reward);assert.equal(h.c.RUN.money,route==='supply'?15:10);
  h.send({type:'journey-commit',key:h.key,route:'supply'});h.run('cityRouteApply()');assert.equal(h.c.RUN.money,route==='supply'?15:10);
  h=setup(JSON.parse(JSON.stringify(h.c.RUN)));h.run('blindSelect()');assert.equal(h.posts.at(-1).route,route);assert.equal(h.selects(),0);

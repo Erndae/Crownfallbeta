@@ -18,7 +18,7 @@ function applyJourneyLand(data){
  const descriptions={safer:'A protected approach: 20% lower target in the next fight. Standard reward. This branch skips the shop.',supply:'Stop to recruit, trade and train. Collect $5 for supplies, then travel onward. Only this branch opens a shop.',risky:'A dangerous approach: 20% higher target in the next fight and $8 extra on victory. This branch skips the shop.'};
  for(const route of ['safer','supply','risky']){
   Object.assign(ROUTES[route],{title:theme.routes[route],caption:theme.captions[route],description:descriptions[route],color:theme[route==='safer'?'safe':route==='supply'?'shop':'risk']});
-  document.querySelector(`.route-card[data-route="${route}"] h3`).textContent=theme.routes[route];
+  const heading=document.querySelector(`.route-card[data-route="${route}"] h3`);if(heading)heading.textContent=theme.routes[route];
  }
  const index=Object.keys(JOURNEY_LANDS).indexOf(id);
  document.querySelectorAll('.world-progress>div>b,.world-progress>div>span').forEach((el,i)=>{el.classList.toggle('current',i===index);el.classList.toggle('passed',i<index);el.setAttribute('aria-current',i===index?'step':'false');});

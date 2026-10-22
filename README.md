@@ -16,7 +16,7 @@ This beta uses the `crownfall-beta-journey-` browser-storage prefix. Campaign, G
 
 Based on Site source commit `81a9ad5c5d601710c7e5deab1a775472898c60c7`. `game-bridge.js` is the readable copy of the bridge embedded in `game.html`.
 
-Run `node validate-beta.mjs` for syntax, asset and storage-isolation checks. The source build also passed journey commitment, resume, idempotency and message-validation checks. Browser visual QA and a full Campaign playthrough were not performed.
+Run `node validate-beta.mjs` for syntax, asset and storage-isolation checks. The source build also passed journey commitment, resume, idempotency and message-validation checks. The world-map revision has mobile and desktop browser QA; a full 85-battle Campaign playthrough was not performed.
 
 ## Opening and Crown City board
 
@@ -37,3 +37,13 @@ The scrollable circuit map shows connected branches, battle nodes, markets and t
 ## Beta soundtrack
 
 Twelve original instrumental tracks live in `soundtrack/`: a title theme, separate travel/menu and battle tracks for each of the five lands, and a dedicated Crownless King theme. Land selection previews that land’s travel theme; the tutorial uses Crown City battle music. Returning to the route map restores travel music. Volume, mute, crossfades and background pause use the existing music manager; legacy music is preserved. `soundtrack/manifest.json` lists titles and generation provenance. Run `node validate-music.mjs` to check routing and audio assets.
+
+## World-location route revision
+
+Every circuit now has four distinct battle locations and a named boss destination; each Ruler has a final stronghold. `journey-world.js` is the shared source for all 85 battle names, map destinations and shop locations. Existing boss names, combat rules and campaign progression remain intact.
+
+New journeys use a connected graph of individual stops, with one to four onward connections, forks, merges, optional shops and direct shortcuts. Junctions reveal the next connections; caches pay $3 once; shops pay $5 once on arrival and open the store. Shelters set the next fight to an 80% target, while danger stops set it to 120% with $8 extra on victory. The last shelter or danger visited determines that fight’s approach. Shops and caches preserve it. All fights remain mandatory.
+
+Each edge is saved before departure. Refresh resumes that destination; rewards cannot be repeated, and leaving a shop returns to its exact node. Only connected nodes are accepted by the game bridge. Existing version-1 journeys finish on their original locked route; the following journey uses the new graph. Save namespaces and the Gauntlet are unchanged.
+
+Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 stages), alongside the existing beta, route, network, onboarding and music validators. Browser checks cover cache → shelter → battle, optional shop arrival/departure, all five map themes, four-choice junctions, and phone/desktop layouts.
