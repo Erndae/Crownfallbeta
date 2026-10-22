@@ -29,3 +29,7 @@ Travel commitment and arrival are saved separately. Refreshing before arrival re
 ## Circuit network and optional shops
 
 The scrollable circuit map shows connected branches, battle nodes, markets and the completed route. View whole circuit fits the network; reachable stops are lit. Victories return to the route map instead of opening a shop. Only a chosen market branch opens a shop on arrival. Leave shop returns to the map for the onward travel leg. Safe and dangerous branches skip shopping. Shop inventory, arrival and departure are saved, including across reloads. This restriction applies to Campaign; Gauntlet keeps its Armory flow. Run `node validate-network.mjs` for map connectivity and stop checks.
+
+## Maps for all five Lands
+
+`journey-lands.js` defines each Land's existing terrain artwork, palette, route names and path geometry. Crown City uses street crossings; Iron Kingdom uses ramparts; Olympian Court uses curved approaches; Shattered Realm uses broken zigzags; Fallen Throne uses angular ash roads. The active Campaign Land automatically selects its map for every circuit and Ruler approach. Map nodes show stage names supplied by the game. Shop branches, saved journeys and the mobile travel dock retain their behavior. The main game's saves remain isolated from this beta.

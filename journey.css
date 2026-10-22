@@ -45,3 +45,21 @@ body.reduce-motion *,body.reduce-motion *:before,body.reduce-motion *:after{tran
  .path-actions .travel-status{font-size:10px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
  .game-open .path-actions{display:none}
 }
+
+/* Each Land retains its own terrain art and palette throughout its journey. */
+body[data-journey-land] .game-shell{background:linear-gradient(#0b1219a6,#0b1117c4),var(--journey-art) center/cover no-repeat}
+body[data-journey-land] .map-window,body[data-journey-land] .path-actions{background-color:var(--journey-ground)}
+body[data-journey-land] .map-art{filter:saturate(.7) brightness(.43)}
+body[data-journey-land] .network-node{color:var(--green)}
+body[data-journey-land] .network-node.supply{color:var(--amber)}
+body[data-journey-land] .network-node.risky,body[data-journey-land] .legend-risk{color:var(--route-risk)}
+body[data-journey-land] .route-track[data-route=risky],body[data-journey-land] .route-card[data-route=risky]{--route:var(--route-risk)}
+body[data-journey-land] .legend-safe,body[data-journey-land] .battle-node.cleared{color:var(--green)}
+body[data-journey-land] .legend-shop{color:var(--amber)}
+body[data-journey-land] .battle-node.cleared circle{stroke:var(--green)}
+body[data-journey-land] .world-progress b,body[data-journey-land] .world-progress span{color:#6f756a}
+body[data-journey-land] .world-progress .passed{color:var(--green)}
+body[data-journey-land] .world-progress .current{color:var(--pink);text-shadow:0 0 12px var(--pink)}
+body[data-journey-land=fantasy] .network-grid{stroke:#d0a9e51a;stroke-dasharray:3 15}
+body[data-journey-land=greek] .map-vignette{background:linear-gradient(90deg,#13272d85,#18333818,#13272d85)}
+body[data-journey-land=throne] .map-vignette{background:linear-gradient(90deg,#25111f90,#25111f30,#25111f90)}
