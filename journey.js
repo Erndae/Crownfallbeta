@@ -47,7 +47,7 @@ function launch(mode){if(pendingJourney){$('#travelStatus').textContent='Finish 
 document.querySelectorAll('[data-launch]').forEach(el=>el.onclick=()=>launch(el.dataset.launch));
 $('#backToMap').onclick=()=>{send('journey-pause');hideGame()};$('#gameMenu').onclick=()=>send('journey-menu');$('#navJourney').onclick=hideGame;
 window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==frame.contentWindow)return;const d=e.data;if(!d||typeof d!=='object')return;
- if(d.type==='crownfall-ready'){frameReady=true;if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
+ if(d.type==='crownfall-ready'){frameReady=true;send('journey-boot');if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
  if(d.type==='journey-request'&&d.networkVersion===2){requestWorldJourney(d);return;}
  if(d.type==='journey-committed'&&d.networkVersion===2&&pendingJourney?.key===d.key){traveling=false;committed=false;selectWorldStop(d.node);committed=true;walkWorldStop();return;}
  if(d.type==='journey-encounter'){

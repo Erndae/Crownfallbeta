@@ -156,11 +156,16 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(RUN) return B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect());
     if(draftGet()) return draftResume();
     if(getCarry()) return landsScreen(title);
+    if(cityOpeningState()?.phase!=='done')return cityOpening();
     return startNewGame();
   }
   window.addEventListener('message', e => {
     if(e.source !== window.parent || e.origin !== location.origin || !e.data || typeof e.data !== 'object') return;
     const d = e.data;
+    if(d.type === 'journey-boot') {
+      if(MODE==='campaign' && !RUN && !draftGet() && !getCarry())return cityOpening();
+      return;
+    }
     if(d.type === 'journey-launch') {
       if(d.mode !== 'campaign' && d.mode !== 'gauntlet') return;
       if(MODE !== d.mode) return goMode(d.mode, d.mode === 'gauntlet' ? (gSummary() ? 'cont' : 'new') : 'journey-open');
