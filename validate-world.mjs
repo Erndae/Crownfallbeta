@@ -1,11 +1,12 @@
 import {readFileSync} from 'node:fs';
 import vm from 'node:vm';
 import assert from 'node:assert/strict';
-const world=readFileSync('journey-world.js','utf8'),helpers=readFileSync('route-benefits.js','utf8'),bridge=readFileSync('game-bridge.js','utf8');
+const world=readFileSync('journey-world.js','utf8')+readFileSync('journey-events.js','utf8'),helpers=readFileSync('route-benefits.js','utf8'),bridge=readFileSync('game-bridge.js','utf8');
 assert(readFileSync('game.html','utf8').includes(helpers+bridge));
 function setup(run){
  const posts=[],handlers={},next={};let shops=0,fights=0;const parent={postMessage:m=>posts.push(JSON.parse(JSON.stringify(m)))};
  const c={RUN:run,MODE:'campaign',MATCH:null,B:null,ACH:{},URLSearchParams,window:{parent,addEventListener:(t,f)=>handlers[t]=f},location:{origin:'https://test',search:'?journey=1'},document:{querySelector:()=>null},$:()=>next,blindSelect(){fights++},startBlind(){fights++},shop(){shops++;},roadStart(){},save(){},sceneMusic(){},modeIntent(){},title(){},nStages:()=>run.circuit==='ruler'?6:4,CIR:()=>({name:run.circuit}),PACKS:[{id:run.land,name:run.land}],MINIS:{[run.land]:{[run.circuit]:'Boss'}},RULERS:{[run.land]:{name:'Ruler'}},stageName:n=>'Stage '+n};
+ c.journeyRenderEncounter=(event,node,action,square)=>{c.stopEvent=event;c.stopAction=action;c.stopSquare=square;};
  vm.createContext(c);vm.runInContext(world+helpers+bridge,c);
  const evalCode=s=>vm.runInContext(s,c),send=d=>handlers.message({source:parent,origin:c.location.origin,data:d});
  evalCode('blindSelect()');
@@ -34,6 +35,10 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
    if(['safer','risky'].includes(n.type))effect=n.type;
    assert.equal(h.c.RUN.money,expectedMoney);assert.equal(h.c.RUN.journeyPreview1[key].position,id);
    const after=JSON.stringify(h.c.RUN);h.send({type:'journey-arrive',key,node:id});assert.equal(JSON.stringify(h.c.RUN),after);
+   const event=h.c.RUN.journeyPreview1[key].encounters[id];assert(event&&!event.resolved,'Every arrival must pause for an encounter');assert.equal(h.posts.at(-1).type,'journey-encounter');
+   h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.posts.at(-1).type,'journey-encounter');assert.equal(h.c.RUN.money,expectedMoney);
+   if(event.kind!=='ambush'){h.c.stopAction('listen');assert.equal(h.c.stopEvent.phase,'story');}
+   h.c.stopAction(event.kind==='ambush'?'retreat':'continue');assert(h.c.RUN.journeyPreview1[key].encounters[id].resolved);
    if(n.type==='supply'){
     assert.equal(h.shops(),1);h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.shops(),1);assert.equal(h.c.RUN.money,expectedMoney);h.next.onclick();assert(!h.c.RUN.inShop);assert(!h.c.RUN.journeyPreview1[key].atShop);
    }else if(n.type!=='fight'){assert.equal(h.shops(),0);assert.equal(h.fights(),0);}
@@ -45,4 +50,4 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
  }
 }
 assert(degrees.has(1)&&degrees.has(2)&&degrees.has(3)&&degrees.has(4));
-console.log(`PASS: ${tested} complete paths across all 85 stages; ${shopPaths} shop visits and ${cachePaths} cache visits; 1–4 connections; every hop reloads, locks, rejects invalid/replayed messages, pays once, and reaches the correct battle.`);
+console.log(`PASS: ${tested} complete paths across all 85 stages; ${shopPaths} shop visits and ${cachePaths} cache visits; 1–4 connections; every stop opens and resumes a scene, blocks departure until resolved, rejects replayed arrivals, pays once, and reaches the correct battle.`);

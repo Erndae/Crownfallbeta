@@ -3,6 +3,7 @@
 <head>
 <script src="beta-storage.js"></script>
 <script src="journey-world.js"></script>
+<script src="journey-events.js"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1c1c1e">
@@ -5476,6 +5477,7 @@ function coach(key){
 // one concept per event: after a card closes, the next one waits for the player to act (a move or a new screen)
 function coachReady(){ coachCool = false; setTimeout(coachNext, 350); }
 function coachNext(){
+  if(document.querySelector('.roadside-encounter'))return;
   if(coachOn || !coachQ.length || coachCool) return;
   if(busy || document.querySelector('.modal, .vict, .ending, .landintro') || document.getElementById('splash')){ setTimeout(coachNext, 500); return; }
   coachQ.sort((x, y) => COACH[y].pri - COACH[x].pri);
@@ -9995,6 +9997,37 @@ firstGame = function(){
   coachMark('intro');startBlind();
 };
 
+/* Roadside scenes and their optional board are separate from the Campaign battle. */
+function journeyRenderEncounter(event,node,onAction,onSquare){
+ document.querySelectorAll('.coach .cbtns .btn').forEach(button=>button.click());
+ if(PACK!==RUN.land)setPack(RUN.land);
+ onTitle=false;setLandBg(RUN.land);setCircuitData(RUN.circuit);app.classList.remove('play','training-play');
+ const esc=value=>String(value||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const battle=event.phase==='skirmish',won=event.phase==='won',lost=event.phase==='escaped';
+ const bonus={cache:'$3 supplies collected',market:'$5 supplies collected',shelter:'Next fight: 20% lower target'}[event.kind]||(node.type==='risky'?'Next fight: +20% target · +$8 on victory':'');
+ const button=(id,label,ghost=false)=>'<button class="btn '+(ghost?'ghost':'')+'" id="'+id+'">'+esc(label)+'</button>';
+ let content='<div class="stop-kicker">'+esc((PACKS.find(p=>p.id===RUN.land)||{}).name)+' · ROADSIDE ENCOUNTER</div><h1>'+esc(node.name)+'</h1><h2>'+esc(event.title)+'</h2><p class="stop-story">'+esc(event.text)+'</p>';
+ if(bonus)content+='<div class="stop-benefit">'+esc(bonus)+'</div>';
+ if(battle){
+  const board=event.board,selected=event.selected,moves=selected==null?[]:legalFor(board,selected),coord=i=>'abcdefgh'[i%8]+(8-Math.floor(i/8));
+  content='<div class="stop-kicker">SURPRISE SKIRMISH · '+esc(node.name)+'</div><h1>Clear the road.</h1><p class="stop-story">Capture the enemy Rook to win $2. Tap your piece, then a highlighted square. Your Campaign army and lives are safe.</p><div class="stop-battle-status" aria-live="polite">'+esc(event.message||'Your move.')+' · '+(6-(event.moves||0))+' moves left</div><div class="boardArea"><div class="boardWrap"><div class="board" id="roadsideBoard" aria-label="Roadside skirmish chessboard">';
+  content+=board.map((q,i)=>'<button class="sq '+((Math.floor(i/8)+i%8)%2?'d':'l')+(selected===i?' sel':'')+(moves.includes(i)?' stop-legal':'')+'" data-stop-square="'+i+'" aria-label="'+coord(i)+(q?', '+(q.side==='me'?'your ':'enemy ')+TYPE[q.t].name:'')+'">'+(q?pieceSVG(q.t,q.side):'')+(moves.includes(i)?'<span class="ring"></span>':'')+'<span class="coord">'+coord(i)+'</span></button>').join('');
+  content+='</div></div></div>'+button('stopRetreat','Slip away · continue',true);
+ }else if(won||lost){
+  content+='<div class="stop-result" role="status">'+(won?'The patrol retreats. $2 added to your purse.':'Your company finds a way around the patrol and regroups. Your army and lives are safe.')+'</div>'+button('stopContinue','Continue journey');
+ }else if(event.kind==='ambush'){
+  content+='<p class="stop-note">Fight a short skirmish for $2, or slip past the patrol. Your Campaign army and lives are safe.</p>'+button('stopFight','Fight the patrol · win $2')+button('stopRetreat','Slip away · continue',true);
+ }else{
+  if(event.phase==='story')content+='<blockquote class="stop-rumor">'+esc(event.story)+'</blockquote>';
+  else if(event.story)content+=button('stopListen','Learn about this place',true);
+  content+=button('stopContinue',event.kind==='market'?'Enter shop':event.kind==='battle'?'Enter battle':'Continue journey');
+ }
+ app.innerHTML='<section class="screen roadside-encounter">'+content+'</section>';
+ const actions={'#stopFight':'fight','#stopRetreat':'retreat','#stopListen':'listen','#stopContinue':'continue'};
+ for(const [selector,action]of Object.entries(actions)){const button=app.querySelector(selector);if(button)button.onclick=()=>onAction(action);}
+ app.querySelectorAll('[data-stop-square]').forEach(button=>button.onclick=()=>onSquare(Number(button.dataset.stopSquare)));
+ if(!battle)window.scrollTo(0,0);
+}
 /* Saved Campaign route benefits. Each choice affects only its destination fight. */
 function cityRouteKey(){ return `${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|${RUN.ante}`; }
 function cityRouteRecord(){
@@ -10035,6 +10068,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   };
   function journeyRequest(){
     const stop = cityRouteRecord();
+    if(stop?.encounter && !stop.encounters?.[stop.encounter]?.resolved)return worldShowEncounter();
     if(stop && stop.networkVersion === 2) return worldRequest();
     if(!stop){ RUN.journeyPreview1 = RUN.journeyPreview1 || {}; RUN.journeyPreview1[journeyKey()] = {networkVersion:2, position:'fight-'+(RUN.circuit==='ruler'?0:RUN.ante-1), route:'road', benefitsVersion:1, arrived:false, visited:[], edges:[]}; return worldRequest(); }
     if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
@@ -10081,6 +10115,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldRequest(){
     const r=cityRouteRecord();
+    if(r.encounter && !r.encounters?.[r.encounter]?.resolved) return worldShowEncounter();
     if(r.atShop) return shop();
     RUN.inShop=false;B=null;journeyPending=journeyKey();save();sceneMusic('land');
     const prefix=`${ACH.campaign_epoch || 0}|${RUN.land}|${RUN.circuit}|`;
@@ -10088,6 +10123,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldCommit(d){
     const r=cityRouteRecord(),g=journeyGraph(worldData());
+    if(r.encounter && !r.encounters?.[r.encounter]?.resolved)return worldShowEncounter();
     if(!r.hop){
       if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
       r.hop=d.node;save();
@@ -10107,10 +10143,71 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       if(node.type==='cache')RUN.money+=3;
       if(node.type==='safer'||node.type==='risky'){r.route=node.type;RUN.fightTarget=null;}
     }
-    if(node.type==='fight'){r.arrived=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'fight',record:r});return journeyOriginalSelect();}
-    if(node.type==='supply'){r.atShop=true;RUN.shop=null;RUN.inShop=true;save();journeyPending=null;journeyPost('journey-enter',{key:d.key,location:'shop',record:r});return shop();}
+    save();return worldBeginEncounter(node);
+  }
+  function worldBeginEncounter(node){
+    const r=cityRouteRecord();r.encounters=r.encounters||{};
+    if(!r.encounters[node.id])r.encounters[node.id]={...journeyEventFor(worldData(),node),place:{id:node.id,type:node.type,name:node.name,boss:!!node.boss}};
+    if(r.encounters[node.id].resolved)return worldProceed(node);
+    r.encounter=node.id;save();return worldShowEncounter();
+  }
+  function worldShowEncounter(){
+    const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    journeyPending=journeyKey();RUN.inShop=false;save();sceneMusic(event.phase==='skirmish'?'battle':'land');
+    journeyPost('journey-encounter',{...worldData(),key:journeyPending,networkVersion:r.networkVersion,place:event.place});
+    const id=event.node,valid=()=>cityRouteRecord()===r&&r.encounter===id&&!event.resolved;
+    return journeyRenderEncounter(event,event.place,action=>{if(valid())worldEncounterAction(action);},square=>{if(valid())worldSkirmishTap(square);});
+  }
+  function worldEncounterAction(action){
+    const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    if(action==='listen'&&event.phase==='intro'&&event.kind!=='ambush'){event.phase='story';save();return worldShowEncounter();}
+    if(action==='fight'&&event.kind==='ambush'&&event.phase==='intro'){
+      event.phase='skirmish';event.board=journeySkirmishBoard(event.variant);event.moves=0;event.selected=null;save();return worldShowEncounter();
+    }
+    if(action==='retreat'&&event.kind==='ambush'){
+      event.phase='escaped';event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
+    }
+    if(action==='continue'&&(event.kind!=='ambush'||event.phase==='won'||event.phase==='escaped')){
+      event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
+    }
+  }
+  function worldSkirmishWin(event){
+    event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=2;}save();return worldShowEncounter();
+  }
+  function worldSkirmishTap(square){
+    const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];
+    if(!event||event.resolved||event.phase!=='skirmish'||!Number.isInteger(square)||square<0||square>63)return;
+    const board=event.board,piece=board[square];
+    if(piece&&piece.side==='me'){event.selected=square;event.message='Choose a highlighted square.';save();return worldShowEncounter();}
+    const from=event.selected;
+    if(from==null||!board[from]||board[from].side!=='me'||!legalFor(board,from).includes(square)){event.message='Select one of your pieces, then a highlighted square.';return worldShowEncounter();}
+    const victim=board[square];board[square]=board[from];board[from]=null;event.selected=null;event.moves++;
+    if(victim&&victim.side==='en'&&victim.t==='R')return worldSkirmishWin(event);
+    const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
+    if(!replies.length){if(inCheck(board,'en'))return worldSkirmishWin(event);event.phase='escaped';}
+    else{
+      replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);const move=replies[0];board[move.to]=board[move.from];board[move.from]=null;
+      if(board[move.to].t==='P'&&(move.to<8||move.to>=56))board[move.to]={...board[move.to],t:'Q'};
+      event.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
+      const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
+      if(!canMove||event.moves>=6)event.phase='escaped';
+    }
+    save();return worldShowEncounter();
+  }
+  function worldProceed(node){
+    const r=cityRouteRecord();
+    if(r.networkVersion!==2)return legacyArrive(journeyKey());
+    if(node.type==='fight'){r.arrived=true;save();journeyPending=null;journeyPost('journey-enter',{key:journeyKey(),location:'fight',record:r});return journeyOriginalSelect();}
+    if(node.type==='supply'){r.atShop=true;RUN.shop=null;RUN.inShop=true;save();journeyPending=null;journeyPost('journey-enter',{key:journeyKey(),location:'shop',record:r});return shop();}
     save();return worldRequest();
   }
+  function legacyArrive(key){
+    const r=cityRouteRecord();
+    if(r.route==='supply'&&!r.shopVisited){r.shopVisited=true;RUN.shop=null;RUN.inShop=true;save();journeyPending=null;return shop();}
+    if(r.route==='supply'&&!r.shopLeft)return shop();
+    r.arrived=true;save();journeyPending=null;cityRouteApply();return journeyOriginalSelect();
+  }
+
   function journeyContinue(){
     if(RUN) return B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect());
     if(draftGet()) return draftResume();
@@ -10145,14 +10242,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       journeyPost('journey-committed',{key:d.key, route:cityRouteRecord().route});return;
     }
     if(d.type === 'journey-arrive' && journeyEligible() && d.key === journeyPending && d.key === journeyKey() && cityRouteRecord()) {
-      const r = cityRouteRecord();
-      if(r.route === 'supply' && !r.shopVisited){
-        r.shopVisited = true; RUN.shop = null; RUN.inShop = true; save();
-        journeyPending = null; return shop();
-      }
-      if(r.route === 'supply' && !r.shopLeft) return shop();
-      r.arrived = true; save();
-      journeyPending = null; cityRouteApply(); return journeyOriginalSelect();
+      const r=cityRouteRecord(),atShop=r.route==='supply'&&!r.shopVisited;
+      const id=atShop?'legacy-shop':'legacy-fight';
+      if(!r.encounters?.[id]?.resolved)return worldBeginEncounter({id,type:atShop?'supply':'fight',name:atShop?'Market stop':stageName(RUN.ante),boss:RUN.circuit==='ruler'});
+      return legacyArrive(d.key);
     }
   });
   window.addEventListener('load',()=>journeyPost('crownfall-ready'));

@@ -61,3 +61,11 @@ Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 s
 The five land rulers now have humanoid animal portraits: Vex is a red fox, Aldric a lion, Athena a barn owl, Morwen a raven, and the Crownless King a stag. Names, rules and save identifiers are preserved. `assets/rulers/` contains the generated WebP portraits and art provenance; `game-clarity.css` sets their framing across land selection, dialogue and introductions. The ending also uses the stag artwork.
 
 Land selection shows every land name without horizontal clipping, explains locked lands, and places the selected challenge’s Enter button above the army details. Boss rules and rewards expand on demand. The journey map displays current location and next battle, enlarges reachable stops, matches their numbers to readable choice cards, quiets distant labels, provides a My location recenter button, and keeps the Start/Continue action accessible on phones. Existing journey records remain compatible.
+
+## Something at every stop
+
+Arriving at a map stop now opens a saved roadside encounter before onward travel. Each land has quiet scenes, discoveries, local rumors, shelter scenes, shop welcomes and battle approaches tied to its own setting and circuit story. Learn about this place reveals optional story detail. Continue opens the correct shop, battle or next map choice.
+
+Some junctions and dangerous stops contain a surprise patrol. Fight a short chess skirmish for $2, or slip away. The skirmish uses a separate board and the game's legal-move rules; capture its Rook to win. Enemy replies and a six-move limit keep it brief. Campaign rosters, upgrades and lives are unchanged. Skirmish rewards pay once. Arrival rewards, scene state, board selections and results survive reloads; unresolved scenes cannot be bypassed by starting another route. Existing version-1 journeys also receive arrival scenes.
+
+journey-events.js holds the content and reproducible event selection. journey-encounter-ui.js is the readable renderer embedded in game.html; the bridge owns saved event progress. Run node validate-encounters.mjs for legal skirmishes, enemy turns, rewards, retreat and save isolation, and node validate-world.mjs for encounters and refresh recovery on every complete route.

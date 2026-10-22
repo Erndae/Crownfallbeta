@@ -50,6 +50,11 @@ window.addEventListener('message',e=>{if(e.origin!==location.origin||e.source!==
  if(d.type==='crownfall-ready'){frameReady=true;if(launchPending){send('journey-launch',{mode:launchPending});launchPending=null;}}
  if(d.type==='journey-request'&&d.networkVersion===2){requestWorldJourney(d);return;}
  if(d.type==='journey-committed'&&d.networkVersion===2&&pendingJourney?.key===d.key){traveling=false;committed=false;selectWorldStop(d.node);committed=true;walkWorldStop();return;}
+ if(d.type==='journey-encounter'){
+  pendingJourney=null;traveling=false;committed=false;
+  if(d.networkVersion===2)buildJourneyNetwork({...d,location:'encounter'});
+  $('#setOff').disabled=false;$('#setOffText').textContent='Return to encounter';$('#routeActionLabel').textContent=d.place?.name||'Your current stop';showGame('campaign');return;
+ }
  if(d.type==='journey-enter'&&pendingJourney?.key===d.key){pendingJourney=null;traveling=false;committed=false;buildJourneyNetwork({...networkData,record:d.record,location:d.location});$('#setOff').disabled=false;$('#setOffText').textContent='Continue Campaign';$('#routeActionLabel').textContent='At '+networkPlan.start.name;showGame('campaign');return;}
  if(d.type==='journey-request'){
   travelToken++;traveling=false;committed=false;pendingJourney={key:d.key,leg:d.leg||'approach'};buildJourneyNetwork(d);
