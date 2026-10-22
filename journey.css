@@ -92,3 +92,14 @@ body[data-journey-land=throne] .map-vignette{background:linear-gradient(90deg,#2
 .cartographic-map .node-label{font-size:21px;letter-spacing:.3px}
 .cartographic-map .node-detail{fill:#ede5ce;font-size:14px}
 .cartographic-map .traveler-halo{fill:#ffe5a51f;stroke:#ffdf9b}
+
+/* Every atlas uses its land's architecture, terrain and route surfaces. */
+body[data-journey-land=street] .cartographic-map .network-node circle{fill:#213646}
+body[data-journey-land=medieval] .cartographic-map .network-node circle{fill:#34473b}
+body[data-journey-land=greek] .cartographic-map .network-node circle{fill:#344f52}
+body[data-journey-land=fantasy] .cartographic-map .network-node circle{fill:#32344f}
+body[data-journey-land=throne] .cartographic-map .network-node circle{fill:#392e3b}
+body[data-journey-land=greek] .cartographic-map .node-label,body[data-journey-land=greek] .cartographic-map .node-detail{stroke:#32484d}
+body[data-journey-land=fantasy] .cartographic-map .node-label,body[data-journey-land=fantasy] .cartographic-map .node-detail{stroke:#232c45}
+body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-land=throne] .cartographic-map .node-detail{stroke:#302632}
+.atlas-district-labels text{paint-order:stroke;stroke:#14212c;stroke-width:5px;stroke-linejoin:round;letter-spacing:3px}

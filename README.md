@@ -51,3 +51,7 @@ Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 s
 ## Overhead location atlas
 
 `journey-cartography.js` draws a street-map background directly in the route map’s coordinates. Each stop has its own building or plaza; road surfaces follow the exact travel paths. Shops have striped storefronts, caches have storage crates, shelters have gardens, and junctions have fountain squares. Battle destinations have halls, stations or fortified strongholds. The harbor has a waterfront and piers. Each land retains its palette, and older saved journeys receive the atlas too. The route map no longer uses a perspective landscape behind floating points.
+
+## Distinct land map artwork
+
+`journey-atlas-themes.js` supplies separate terrain, buildings, landmarks and road surfaces for each land. Crown City has dense brick/glass blocks, roof equipment, lit storefronts, traffic, crossings and transit tracks; its rooftop and midnight circuits emphasize towers and neon. The Iron Kingdom has mountain ridges, castle walls, pine woods, timber houses, caravan stalls and stone keeps. The Olympian Court uses marble temples, columns, olive groves and an Aegean coast. The Shattered Realm has floating islands, crystalline spires, portals and rune bridges over a starry void. The Fallen Throne has fractured bastions, fallen masonry, dead trees and ember fissures. Named woods, fields and bridge/ford locations receive corresponding landmarks. Every land continues to use the exact saved travel graph and location coordinates.
