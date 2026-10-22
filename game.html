@@ -3268,14 +3268,19 @@ function packPicker(after){
    Tracks are played exactly as authored (Web Audio, sample-accurate loop, no effects/pitch/speed changes).
    Sound effects keep their own path and on/off switch, so music and SFX are independent. */
 const MUSIC = {
-  tracks: {                                   // context → file (files sit next to index.html)
-    menu:      'crownfall-main-theme.mp3',
-    street:    'crown-city-theme.mp3',
-    medieval:  'iron-kingdom-theme.mp3',
-    greek:     'olympian-court-theme.mp3',
-    fantasy:   'shattered-realm-theme.mp3',
-    throne:    'fallen-throne-theme.mp3',
-    crownless: 'crownless-king-battle.mp3',
+  tracks: {
+    'menu': 'soundtrack/menu.mp3',
+    'street': 'soundtrack/street.mp3',
+    'street-battle': 'soundtrack/street-battle.mp3',
+    'medieval': 'soundtrack/medieval.mp3',
+    'medieval-battle': 'soundtrack/medieval-battle.mp3',
+    'greek': 'soundtrack/greek.mp3',
+    'greek-battle': 'soundtrack/greek-battle.mp3',
+    'fantasy': 'soundtrack/fantasy.mp3',
+    'fantasy-battle': 'soundtrack/fantasy-battle.mp3',
+    'throne': 'soundtrack/throne.mp3',
+    'throne-battle': 'soundtrack/throne-battle.mp3',
+    'crownless': 'soundtrack/crownless.mp3',
   },
   fade: 1.2,          // seconds, crossfade between contexts
   maxGain: 0.7,       // 100% on the slider; keeps music under captures, Score Damage, checks and crown sounds
@@ -3355,13 +3360,13 @@ document.addEventListener('visibilitychange', () => {
 });
 // Which music belongs to the screen the player is on right now
 // Screens declare what they are ('menu' or 'land'); the manager remembers it for story moments that pause music.
-function sceneMusic(kind){ if(kind !== 'battle'){ delete document.body.dataset.ruler; delete document.body.dataset.ckf; } coachReady(); MM.scene = !RUN || kind === 'menu' ? 'menu' : kind === 'battle' ? battleMusic() : landMusic(); setMusicContext(MM.scene); }
+function sceneMusic(kind){ if(kind !== 'battle'){ delete document.body.dataset.ruler; delete document.body.dataset.ckf; } coachReady(); MM.scene = kind === 'selection' ? (MUSIC.tracks[PACK] ? PACK : 'menu') : kind === 'training' ? 'street-battle' : !RUN || kind === 'menu' ? 'menu' : kind === 'battle' ? battleMusic() : landMusic(); setMusicContext(MM.scene); }
 function screenMusic(){ return MM.scene || 'menu'; }
 const landMusic = () => MUSIC.tracks[land()] ? land() : 'menu';
 // The Crownless King's own theme is reserved for the actual battle against him (never menus, previews or other Throne fights)
 function battleMusic(){
   if(land() === 'throne' && RUN.circuit === 'ruler' && RUN.blind === 2 && bossAt(RUN.ante) === 'ruler') return 'crownless';
-  return landMusic();
+  return MUSIC.tracks[land() + '-battle'] ? land() + '-battle' : landMusic();
 }
 function musicControls(id){
   return `<label class="mvol"><span>Music volume</span><input type="range" id="${id}" min="0" max="100" step="5" value="${Math.round(musicVol * 100)}" aria-label="Music volume"><b id="${id}v">${Math.round(musicVol * 100)}%</b></label>`;
@@ -5256,7 +5261,6 @@ document.addEventListener('click', e => { if(swallowClick && Date.now() - swallo
 function leaveBoard(){ app.classList.remove('play'); document.body.dataset.mood = 'calm'; document.body.classList.remove('peeking'); document.querySelectorAll('.peekbar,#speech').forEach(x => x.remove()); window.scrollTo(0, 0); }
 function circuitSelect(startLand, startCircuit){
   setTimeout(() => crownChoiceFlow(), 450);                                 // any World Crown still waiting for its power choice
-  sceneMusic('menu');
   leaveBoard();
   onTitle = false; setCircuitData('');
   if(startLand && PACKS.some(x => x.id === startLand) && landOpen(startLand) && PACK !== startLand){ setPack(startLand); musicRestart(); }
@@ -5264,6 +5268,7 @@ function circuitSelect(startLand, startCircuit){
   let pickC = startCircuit && canEnter(PACK, startCircuit) ? startCircuit : nextStep(PACK);
   const lname = l => PACKS.find(x => x.id === l).name;
   const draw = () => {
+    sceneMusic('selection');
     setLandBg(null);
     if(!canEnter(PACK, pickC)) pickC = nextStep(PACK);
     const R = RULERS[PACK], won = landWon(PACK), n = conqCount(PACK), cur = nextStep(PACK), rOpen = rulerOpen(PACK);
@@ -9953,6 +9958,7 @@ function cityFinishTraining(skipped){
 }
 function cityTraining(){
   cityEndTraining(); leaveBoard(); onTitle=false;setPack('street');setLandBg(null);
+  sceneMusic('training');
   app.classList.add('play','training-play');
   const board=Array(64).fill(null);
   for(const [i,t,side] of [[60,'K','me'],[56,'R','me'],[57,'N','me'],[4,'K','en'],[42,'R','en'],[24,'P','en']]) board[i]={t,side};
@@ -10028,7 +10034,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   function journeyRequest(){
     const stop = cityRouteRecord();
     if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
-    RUN.inShop = false; B = null; save();
+    RUN.inShop = false; B = null; save(); sceneMusic('land');
     journeyPending = journeyKey();
     const r = cityRouteRecord();
     journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
@@ -10074,7 +10080,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       return journeyContinue();
     }
     if(d.type === 'journey-menu') return title();
-    if(d.type === 'journey-pause') {if(RUN) save(); return;}
+    if(d.type === 'journey-pause') {if(RUN) save(); sceneMusic('land'); return;}
     if(d.type === 'journey-commit') {
       if(!journeyEligible() || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};

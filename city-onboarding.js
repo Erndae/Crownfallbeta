@@ -25,6 +25,7 @@ function cityFinishTraining(skipped){
 }
 function cityTraining(){
   cityEndTraining(); leaveBoard(); onTitle=false;setPack('street');setLandBg(null);
+  sceneMusic('training');
   app.classList.add('play','training-play');
   const board=Array(64).fill(null);
   for(const [i,t,side] of [[60,'K','me'],[56,'R','me'],[57,'N','me'],[4,'K','en'],[42,'R','en'],[24,'P','en']]) board[i]={t,side};

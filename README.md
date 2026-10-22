@@ -33,3 +33,7 @@ The scrollable circuit map shows connected branches, battle nodes, markets and t
 ## Maps for all five Lands
 
 `journey-lands.js` defines each Land's existing terrain artwork, palette, route names and path geometry. Crown City uses street crossings; Iron Kingdom uses ramparts; Olympian Court uses curved approaches; Shattered Realm uses broken zigzags; Fallen Throne uses angular ash roads. The active Campaign Land automatically selects its map for every circuit and Ruler approach. Map nodes show stage names supplied by the game. Shop branches, saved journeys and the mobile travel dock retain their behavior. The main game's saves remain isolated from this beta.
+
+## Beta soundtrack
+
+Twelve original instrumental tracks live in `soundtrack/`: a title theme, separate travel/menu and battle tracks for each of the five lands, and a dedicated Crownless King theme. Land selection previews that land’s travel theme; the tutorial uses Crown City battle music. Returning to the route map restores travel music. Volume, mute, crossfades and background pause use the existing music manager; legacy music is preserved. `soundtrack/manifest.json` lists titles and generation provenance. Run `node validate-music.mjs` to check routing and audio assets.

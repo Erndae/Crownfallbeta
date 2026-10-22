@@ -13,7 +13,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   function journeyRequest(){
     const stop = cityRouteRecord();
     if(stop && stop.route === 'supply' && stop.shopVisited && !stop.shopLeft && !stop.arrived) return shop();
-    RUN.inShop = false; B = null; save();
+    RUN.inShop = false; B = null; save(); sceneMusic('land');
     journeyPending = journeyKey();
     const r = cityRouteRecord();
     journeyPost('journey-request', {key:journeyPending, stage:RUN.ante, stages:nStages(), ruler:RUN.circuit === 'ruler', land:RUN.land, landName:(PACKS.find(p => p.id === RUN.land) || {}).name || RUN.land, circuit:CIR().name, destination:stageName(RUN.ante), route:r && r.route, leg:r && r.shopLeft ? 'depart' : 'approach', history:Object.fromEntries(Object.entries(RUN.journeyPreview1 || {}).map(([k,v]) => [k.split('|').at(-1), {route:v.route, arrived:v.arrived !== false}])), stageNames:Array.from({length:nStages()},(_,i)=>stageName(i+1))});
@@ -59,7 +59,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       return journeyContinue();
     }
     if(d.type === 'journey-menu') return title();
-    if(d.type === 'journey-pause') {if(RUN) save(); return;}
+    if(d.type === 'journey-pause') {if(RUN) save(); sceneMusic('land'); return;}
     if(d.type === 'journey-commit') {
       if(!journeyEligible() || d.key !== journeyPending || d.key !== journeyKey() || !['safer','supply','risky'].includes(d.route)) return journeyPost('journey-error',{message:'This road is no longer active. Continue from the game menu.'});
       RUN.journeyPreview1 = RUN.journeyPreview1 || {};
