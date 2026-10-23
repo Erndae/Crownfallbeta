@@ -2,6 +2,14 @@
 
 Play at https://erndae.github.io/Crownfallbeta/.
 
+## Campaign depth update
+
+- Four optional patrol missions: break the patrol, reach an exit, defend the supply Rook, or intercept a marked courier. Temporary patrol armies remain separate from Campaign armies and lives.
+- Stable officer and circuit-boss strategies use the existing formation and AI systems; battle briefings show counterplay. Rulers retain their established rules and formations.
+- Cavalry pair, Tower guard, and Pawn company synergies reward army composition and specific tactical captures. Each land adds one explicit scoring perk. Current bonuses and the last move’s arithmetic are available through existing battle feedback.
+- Optional $2 shortcut tolls bypass roadside stops. Aid choices cost $3 and deliver $5 at a later chosen shop; supplies survive Circuit carry and redeem once. Paid journey commitments stay resumable without a second charge.
+- Regression checks include `node validate-depth.mjs`, `node validate-encounters.mjs`, and `node validate-world.mjs`: conditional score bonuses, generated boss-army constraints, legal self-play mission solutions, all 572 route paths, save/reload behavior, and one-time payments. These are automated playtests, not recordings of human play sessions.
+
 This is the v156-based playable build from the Crownfall Journey Site, including the illustrated Downtown map, crown-shaped initiative dice, and automatic Campaign entry when route travel finishes. Between every Campaign fight, including circuit changes and Ruler battles, choose a route and walk to the next Stage screen. Routes affect the destination fight: Back alley lowers its score target by 20%; Market street grants $5 on commitment; Rooftop crossing raises its target by 20% and grants $8 extra on victory. Targets stay fixed on retries; supplies are granted once, including across refreshes. Each route applies only to its destination fight; Gauntlet and Crown Match are unaffected. Existing selected routes receive benefits when returning to their destination selection screen, without changing a battle already in progress.
 
 ## Hosting

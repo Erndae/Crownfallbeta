@@ -37,6 +37,7 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
    const n=g.byId[id];const before=JSON.stringify(h.c.RUN);
    h.send({type:'journey-commit',key,node:'unreachable'});assert.equal(JSON.stringify(h.c.RUN),before);
    h.send({type:'journey-commit',key:'wrong',node:id});assert.equal(JSON.stringify(h.c.RUN),before);
+   expectedMoney-=g.edges.find(e=>e.from===h.c.RUN.journeyPreview1[key].position&&e.to===id)?.cost||0;
    h.send({type:'journey-commit',key,node:id});assert.equal(h.c.RUN.journeyPreview1[key].hop,id);
    // Reload on the road; a competing choice cannot replace the saved destination.
    h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.posts.at(-1).record.hop,id);
@@ -71,3 +72,38 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
 }
 assert(degrees.has(1)&&degrees.has(2)&&degrees.has(3)&&degrees.has(4));
 console.log(`PASS: ${tested} complete paths across all 85 stages; ${shopPaths} shop visits and ${cachePaths} cache visits; 1–4 connections; simple stops stay on the map; shops and battles open directly; interactive scenes resume and block departure; replayed arrivals pay once and reach the correct battle.`);
+// A toll is refused before commitment if it is unaffordable, and charged only
+// once when a destination is locked (including repeated requests after reload).
+{
+ const key='0|street|downtown|3',run={land:'street',circuit:'downtown',ante:3,blind:2,money:0,armyStages:4,journeyPreview1:{}};
+ run.journeyPreview1[key]={networkVersion:2,position:'s3-a0',route:'road',benefitsVersion:1,arrived:false,visited:['s3-a0'],edges:[],encounters:{}};
+ let h=setup(run);const target='fight-3';h.send({type:'journey-commit',key,node:target});assert(!h.c.RUN.journeyPreview1[key].hop);assert.equal(h.posts.at(-1).type,'journey-error');
+ h.c.RUN.money=2;h.send({type:'journey-commit',key,node:target});assert.equal(h.c.RUN.money,0);assert.equal(h.c.RUN.journeyPreview1[key].tolls,2);
+ h=setup(JSON.parse(JSON.stringify(h.c.RUN)));h.send({type:'journey-commit',key,node:target});assert.equal(h.c.RUN.money,0);assert.equal(h.c.RUN.journeyPreview1[key].tolls,2);
+ h.send({type:'journey-arrive',key,node:target});assert.equal(h.fights(),1);
+}
+// Find an authored aid event with a reachable later shop, then play through it.
+{
+ let chosen;
+ outer:for(const land of lands)for(const circuit of circuits)for(let stage=1;stage<=4;stage++){
+  if(circuit==='ruler')continue;
+  const h=setup({land,circuit,ante:stage,blind:2,money:10,armyStages:4});const data={land,circuitId:circuit,stage};
+  const g=h.eval('journeyGraph('+JSON.stringify(data)+')');
+  for(const node of g.nodes.filter(n=>n.stage===stage&&n.type!=='fight')){
+   const event=h.eval('journeyEventFor('+JSON.stringify(data)+','+JSON.stringify(node)+')');if(event.kind!=='aid')continue;
+   const paths=(id,path=[])=>{for(const edge of g.edges.filter(e=>e.from===id&&g.byId[e.to].stage===stage&&g.byId[e.to].type!=='fight')){if(g.byId[edge.to].type==='supply')return [...path,edge.to];const found=paths(edge.to,[...path,edge.to]);if(found)return found;}return null;};
+   const path=paths(node.id);if(path){chosen={land,circuit,stage,node,event,path,g};break outer;}
+  }
+ }
+ assert(chosen,'An aid choice can lead to a later shop');const {land,circuit,stage,node,event,path,g}=chosen,key=`0|${land}|${circuit}|${stage}`;
+ const run={land,circuit,ante:stage,blind:2,money:10,armyStages:4,roster:['K'],lv:{},relics:[],journeyPreview1:{}};
+ event.place={id:node.id,type:node.type,name:node.name};run.journeyPreview1[key]={networkVersion:2,position:node.id,route:'road',benefitsVersion:1,arrived:false,visited:[node.id],edges:[],encounter:node.id,encounters:{[node.id]:event}};
+ let h=setup(run);const help=h.c.stopAction;help('help');assert.equal(h.c.RUN.money,7);assert.equal(h.c.RUN.shopCredit,5);help('help');assert.equal(h.c.RUN.money,7,'Aid cannot be paid twice');
+ const game=readFileSync('game.html','utf8'),carryLine=game.split('\n').find(line=>line.startsWith('const carryOfRun ='));
+ assert.equal(h.eval(carryLine+'\ncarryOfRun(RUN).shopCredit'),5,'Aid supplies survive Circuit carry');
+ h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.c.RUN.shopCredit,5);
+ for(const id of path){h.send({type:'journey-commit',key,node:id});h.send({type:'journey-arrive',key,node:id});const event=h.c.RUN.journeyPreview1[key].encounters[id];if(!event.resolved)h.c.stopAction(event.kind==='ambush'?'retreat':'continue');}
+ assert.equal(h.c.RUN.shopCredit,0);assert.equal(h.c.RUN.shopCreditApplied,5);const cash=h.c.RUN.money;
+ h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.c.RUN.money,cash);h.send({type:'journey-arrive',key,node:path.at(-1)});assert.equal(h.c.RUN.money,cash,'Shop supplies redeem once');
+}
+console.log('PASS: unaffordable shortcuts reject safely, tolls persist once across reloads, aid is charged once and carried, and next-shop supplies redeem exactly once.');

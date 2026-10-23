@@ -106,3 +106,20 @@ console.log('PASS: shared match movement/capture animation, ordered patrol reply
  await h.tap(4);assert.equal(e.inspected,4,'Enemy pieces can be inspected');assert.equal(e.selected,null);assert.equal(e.moves,0);
 }
 console.log('PASS: patrol selection toggles and enemy inspection match main-board interaction without spending moves.');
+// Self-play found these legal lines against the same deterministic patrol AI.
+// Keep them as short regression playtests for all new mission types.
+for(const [objective,line,reward] of [
+ ['escape',[[44,43],[43,42],[42,33],[33,24]],3],
+ ['hold',[[34,43],[42,52],[43,50],[50,59],[51,35],[35,51]],3],
+ ['courier',[[42,27],[27,21],[21,36]],4]
+]){
+ const run=fixture(0),key='0|street|downtown|2';run.journeyPreview1[key].encounters['s2-a2'].objective=objective;
+ let h=setup(run);h.action('fight');const event=h.c.RUN.journeyPreview1[key].encounters['s2-a2'];
+ assert.equal(event.objective,objective);assert.equal(event.patrolVersion,3);
+ for(const [from,to]of line){await h.tap(from);await h.tap(to);}
+ assert.equal(event.phase,'won',objective+' has a verified legal solution');assert.equal(h.c.RUN.money,17+reward);assert(event.rewardPaid);
+ assert.equal(h.c.RUN.lives,3);assert.deepEqual(h.c.RUN.roster,['K','R','N','P']);
+ await h.tap(line.at(-1)[1]);assert.equal(h.c.RUN.money,17+reward);
+ h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.c.RUN.money,17+reward);h.action('continue');assert.equal(h.c.RUN.money,17+reward);
+}
+console.log('PASS: escape, convoy defense and courier missions are won through legal multi-turn play; reloads and repeated taps cannot duplicate their rewards or change the Campaign army/lives.');

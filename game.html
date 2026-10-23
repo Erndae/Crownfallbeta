@@ -5,10 +5,11 @@
 <script src="piece-designs.js"></script>
 <script src="character-style.js"></script>
 <link rel="stylesheet" href="character-style.css">
-<script src="journey-world.js"></script>
+<script src="journey-world.js?v=depth1"></script>
 <script src="campaign-opponents.js"></script>
+<script src="campaign-depth.js?v=depth1"></script>
 <script src="journey-stop-icons.js"></script>
-<script src="journey-events.js"></script>
+<script src="journey-events.js?v=depth1"></script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#1c1c1e">
@@ -2399,7 +2400,7 @@ body[data-pack="gauntlet"] .pblind .sigchip{display:none}
 
 
 <link rel="stylesheet" href="city-board.css">
-<link rel="stylesheet" href="game-clarity.css">
+<link rel="stylesheet" href="game-clarity.css?v=depth1">
 <link rel="stylesheet" href="opening-intro.css">
 <div id="app"></div>
 <div id="rotateOv" aria-live="polite"><i aria-hidden="true">📱</i><b>Rotate your phone</b><span>Crownfall battles are designed for portrait play.</span></div>
@@ -3166,7 +3167,7 @@ function draftBegin(){
 const draftResume = () => { const d = draftGet(); if(d && !d.seen) return teamIntro(); if(firstRun()) return firstGame(); circuitSelect('street', 'downtown'); };
 // Old saves: Rebuild Protection records become the checkpoint model, and a game already in progress gets a checkpoint
 // from its current army (the exact pre-circuit army can't be rebuilt; this never loses or adds anything).
-const carryOfRun = r => ({roster:r.roster.filter(Boolean), lv:r.lv, relics:r.relics, cards:r.cards || [], money:r.money, lives:r.lives != null ? r.lives : 3, livesBought:r.livesBought || 0, bonusSwaps:r.bonusSwaps || 0, lifeLand:r.lifeLand || null, qBought:r.qBought || 0, journeys:r.journeys || 1, armyStages:r.armyStages || 0, evHist:r.evHist || [], fallen:r.fallen || [], laLast:r.laLast || {}});
+const carryOfRun = r => ({roster:r.roster.filter(Boolean), lv:r.lv, relics:r.relics, cards:r.cards || [], money:r.money, lives:r.lives != null ? r.lives : 3, livesBought:r.livesBought || 0, shopCredit:r.shopCredit||0, bonusSwaps:r.bonusSwaps || 0, lifeLand:r.lifeLand || null, qBought:r.qBought || 0, journeys:r.journeys || 1, armyStages:r.armyStages || 0, evHist:r.evHist || [], fallen:r.fallen || [], laLast:r.laLast || {}});
 function migrateCheckpoint(){
   const rb = getRebuild(), cp = cpGet(); let ch = false;
   if(rb){ if(rb.rulerRebuild && !landWon(rb.land)){ cp.replay = rb.land; ch = true;
@@ -3408,7 +3409,7 @@ function normLv(r){ if(r && r.lv) for(const k in r.lv) r.lv[k] = Math.max(1, Mat
 const KING_SCORE_LV = 3;   // v142: King XP / King Level retired. The King's captures score at a fixed level (the campaign average of the old Lv.1-4 curve was ~2.7)
 const scoreLv = t => t === 'K' ? (MATCH ? 1 : KING_SCORE_LV) : effLv(t);
 const lvLabel = t => `Lv.${effLv(t)}${effLv(t) >= LV_MAX ? ' · MAX' : ''}`;
-function storeCarry(){ if(!RUN) return; setCarry({roster:RUN.roster.filter(Boolean), lv:RUN.lv, relics:RUN.relics, cards:RUN.cards || [], money:RUN.money, lives:lives(), livesBought:RUN.livesBought || 0, bonusSwaps:RUN.bonusSwaps || 0, lifeLand:RUN.lifeLand || null, qBought:RUN.qBought || 0, journeys:(RUN.journeys || 1) + 1, armyStages:RUN.armyStages || 0, evHist:RUN.evHist || [], fallen:RUN.fallen || [], laLast:RUN.laLast || {}}); }
+function storeCarry(){ if(!RUN) return; setCarry({roster:RUN.roster.filter(Boolean), lv:RUN.lv, relics:RUN.relics, cards:RUN.cards || [], money:RUN.money, lives:lives(), livesBought:RUN.livesBought || 0, shopCredit:RUN.shopCredit||0, bonusSwaps:RUN.bonusSwaps || 0, lifeLand:RUN.lifeLand || null, qBought:RUN.qBought || 0, journeys:(RUN.journeys || 1) + 1, armyStages:RUN.armyStages || 0, evHist:RUN.evHist || [], fallen:RUN.fallen || [], laLast:RUN.laLast || {}}); }
 function newRun(circuit){
   const bosses = []; for(let a=1;a<=nStages(circuit || 'downtown');a++) bosses.push(pick(BOSSES).id);
   RUN = {ante:1, blind:(circuit || 'downtown') === 'ruler' ? 0 : 2, money:4, relics:[], roster:draftRoster() || ['K','R','B','N','P','P','P','P'], lv:{P:1,N:1,B:1,R:1,Q:1,K:1}, bosses, restocks:0, best:0, won:false,
@@ -3428,7 +3429,7 @@ function newRun(circuit){
   if(carry){
     if(carry.lv && (carry.lv.K | 0) > 1) kingTrainRefunded += dropKingTraining(carry);   // a carried army that missed the v105 migration
     RUN.roster = carry.roster.slice(); RUN.lv = Object.assign({P:1,N:1,B:1,R:1,Q:1,K:1}, carry.lv); normLv(RUN); RUN.relics = carry.relics.slice(0, 5); RUN.cards = (carry.cards || []).slice(0, 2);
-    RUN.money = carry.money + (isC('midnight') ? 4 : 0); RUN.lives = carry.lives || 3; RUN.livesBought = carry.livesBought || 0; RUN.lifeLand = carry.lifeLand || null; RUN.bonusSwaps = carry.bonusSwaps || 0; RUN.qBought = carry.qBought || 0; RUN.journeys = carry.journeys || 1; RUN.evHist = (carry.evHist || []).slice(-6); RUN.fallen = (carry.fallen || []).slice(-40); RUN.laLast = carry.laLast || {}; RUN.armyStages = carry.armyStages != null ? carry.armyStages : Math.max(0, (RUN.journeys - 1) * 4); RUN.carried = true;
+    RUN.shopCredit=carry.shopCredit||0; RUN.money = carry.money + (isC('midnight') ? 4 : 0); RUN.lives = carry.lives || 3; RUN.livesBought = carry.livesBought || 0; RUN.lifeLand = carry.lifeLand || null; RUN.bonusSwaps = carry.bonusSwaps || 0; RUN.qBought = carry.qBought || 0; RUN.journeys = carry.journeys || 1; RUN.evHist = (carry.evHist || []).slice(-6); RUN.fallen = (carry.fallen || []).slice(-40); RUN.laLast = carry.laLast || {}; RUN.armyStages = carry.armyStages != null ? carry.armyStages : Math.max(0, (RUN.journeys - 1) * 4); RUN.carried = true;
     setCarry(null); // it now lives inside this game
   }
   if(isC('harbor')){ if(betaCan('N')) recruitAdd('N'); RUN.lv.N = Math.max(RUN.lv.N, 2); }   // v156: in Crown City this is the Circuit's recruit
@@ -4177,7 +4178,8 @@ const ARCHE = {   // tag: the short pre-fight label (none = a recognisable but n
 const sigBase = a => a ? a.replace('+', '') : null;
 function bossSignature(P){
   if(!P || !P.boss || P.ruler) return null;
-  return SIG_BOSS[bossRuleName(P.id)] || null;
+  const plan=MODE==='campaign'&&!MATCH?campaignBossPlan(RUN):null;
+  return plan?.signature || SIG_BOSS[bossRuleName(P.id)] || null;
 }
 // composition for an archetype at n pieces; prot (0-2) softens the signature itself while keeping its identity
 function signatureRoster(arche, n, prot){
@@ -4239,6 +4241,7 @@ function enemyProfile(){
   const persona = boss && id ? (PERSONA[bossRuleName(id)] || {}) : {};
   const style = persona.style || (Math.random() < 0.6 ? ENEMY_ARMY.landStyle[l] : pick(['aggressive','defensive','hunter','tricky','greedy']));
   const P = {land:l, tier, boss, id, ruler:id === 'ruler', n, power, q, style};
+  const plan=MODE==='campaign'&&!MATCH&&boss?campaignBossPlan(RUN):null;if(plan&&!P.ruler)P.style=plan.style;
   P.sig = bossSignature(P);
   if(RUN.gauntlet && !P.sig && !P.ruler){ const w = gWave(); if(w >= 8 && Math.random() < (w > 41 ? Math.min(0.65, 0.45 + 0.01 * (w - 41)) : Math.min(0.45, 0.04 * (w - 6)))) P.sig = pick(G_SIGS.filter(a => w >= 12 || a !== 'twinQueens')); }   // v151: the Gauntlet's surprise armies
   if(!P.sig && !P.ruler) cpApplyProfile(P);   // v134 Circuit gameplay identity
@@ -4860,7 +4863,7 @@ function storyLines(o){
 const STYLE_TXT = {aggressive:'Aggressive: charges in and trades pieces', hunter:'King hunter: goes straight for your King', tricky:'Tricky: sets up forks and double attacks', greedy:'Greedy: grabs anything worth money', defensive:'Defensive: protects its pieces and waits for mistakes'};
 function curPersona(){ if(!RUN || !B || RUN.blind !== 2) return null; const id = bossId(); if(!id) return null; return personaOf(id); }
 function personaOf(id){ const n = bossName(id);
-  if(n && n!==bossRuleName(id)) return storyLines({name:n,style:(PERSONA[bossRuleName(id)]||{}).style,intro:'This is my ground. Make your move.',capture:['That square is mine.'],hurt:['I saw that too late.'],check:'Your King is exposed.',lose:'The road is yours.',win:'This is where your journey stops.'});
+  if(n && n!==bossRuleName(id)){const plan=campaignBossPlan(RUN);return storyLines({name:n,style:plan?.style||(PERSONA[bossRuleName(id)]||{}).style,...campaignBossVoice(plan)});}
   if(PERSONA[n]) return storyLines({name:n, ...PERSONA[n], ruler:id === 'ruler'}); if(SIMPLE_TALK[n]) return storyLines({name:n, ...SIMPLE_TALK[n], simple:true}); return null; }
 function portrait(pp){
   if(pp.ruler) return rulerFace(land(), 'talk') || `<span class="spk-face ruler">${crownSVG(land(), 'hard', true)}</span>`;
@@ -4923,6 +4926,7 @@ function scoreCapture(from, to, pt){
   const ctx = {capture:!!victim, check, a, v, vv, dist: Math.max(Math.abs(fr-trr), Math.abs(fc-tcc)), fork, before:B.caps, money:RUN.money, left:B.moves-1, promo, lost:B.lost, mine:nb.filter(p => p && p.side === 'me' && p.t !== 'K').length,
     risky: attacksOn(nb, 'en').includes(to), lastOne: !!victim && nb.filter(p => p && p.side === 'en' && p.t !== 'K').length === 0, streak: B.streak > 0};
   const me = b[from];
+  if(!MATCH)for(const bonus of campaignCaptureBonuses({run:RUN,battle:B,before:b,after:nb,from,to,capture:!!victim,check,attacks:attackSquares})){chips+=bonus.c;mult+=bonus.m;steps.push(bonus);}
   if(victim && hasE(me,'iron')){ mult += 4; steps.push({src:'ench', m:4}); }
   if(victim && hasE(me,'fire')){ chips += 50; steps.push({src:'ench', c:50}); }
   if(victim && hasE(me,'royal')){ chips += 25; mult += 2; steps.push({src:'ench', c:25, m:2}); }
@@ -5566,7 +5570,7 @@ function bossChips(id){
 }
 function bossDetails(boss){
   if(RUN && RUN.gauntlet && !MATCH) return gFoeDetails(boss);   // v152
-  const pp = personaOf(boss.id), a = SIG_BOSS[bossRuleName(boss.id)], A = a && ARCHE[sigBase(a)], lim = moveLimitFor(parFor(), boss.id);
+  const pp = personaOf(boss.id), a = B?.ai?.sig || campaignBossPlan(RUN)?.signature || SIG_BOSS[bossRuleName(boss.id)], A = a && ARCHE[sigBase(a)], lim = moveLimitFor(parFor(), boss.id);
   const m = modal(`<p class="tr-kicker" style="margin:0">${boss.ruler ? 'Ruler' : boss.mini ? 'Rival · Circuit boss' : 'Boss'}</p><h2 style="margin:0">${bossName(boss.id)}</h2>
     <div class="cash" style="gap:8px;display:flex;flex-direction:column">
       <div><b style="font-family:var(--display);font-weight:400;color:#ffb3bd">Rules</b><br><span style="font-size:14px">${boss.desc}</span></div>
@@ -5662,7 +5666,7 @@ function blindSelect(){
       <span style="font-family:var(--display)">${i===2 ? bossName(boss.id) : roundName(i)}</span>
       <small>Score at least</small><b>${t(i).toLocaleString()}</b>
       <small>Reward $${bl.reward}${cityRouteReward() ? ` + $${cityRouteReward()} route bonus` : ''}</small>
-      ${i===2 ? `<div class="bchips">${bossChips(boss.id).map(c => `<small class="bsig rule">${c}</small>`).join('')}${(() => { const a = SIG_BOSS[bossRuleName(boss.id)], t = a && ARCHE[sigBase(a)] && ARCHE[sigBase(a)].tag; return t ? `<small class="bsig">${t}</small>${DOUBLE_MARCH.has(sigBase(a)) ? '<small class="bsig dm">Double March</small>' : ''}` : ''; })()}</div>` : ''}
+      ${i===2 ? `<div class="bchips">${bossChips(boss.id).map(c => `<small class="bsig rule">${c}</small>`).join('')}${(() => { const a = campaignBossPlan(RUN)?.signature || SIG_BOSS[bossRuleName(boss.id)], t = a && ARCHE[sigBase(a)] && ARCHE[sigBase(a)].tag; return t ? `<small class="bsig">${t}</small>${DOUBLE_MARCH.has(sigBase(a)) ? '<small class="bsig dm">Double March</small>' : ''}` : ''; })()}</div>` : ''}
       ${i===2 && personaOf(boss.id) && personaOf(boss.id).style ? `<small class="bstyle">${STYLE_TXT[personaOf(boss.id).style].replace(/: (.)/, (m, c) => ' · ' + c.toUpperCase())}</small>` : ''}
       ${i===2 ? '<small class="bmore">Tap for rules</small>' : ''}
       ${i===2 && boss.ruler ? `<span class="prize">${crownSVG(land(), 'hard', true)}<small>${landWon(land()) ? 'Defend' : 'Win'} ${/^The /.test(landCrownName(land())) ? landCrownName(land()) : 'the ' + landCrownName(land())}</small></span>` : ''}
@@ -6587,6 +6591,8 @@ function explainScore(first){
   modal(`<p class="muted">How scoring works</p><h2>Material × Brilliance</h2>
     <p><b class="fxc">Material</b> is how much a capture is worth: your piece's base, plus the value of the piece you take.</p>
     <p><b class="fxm">Brilliance</b> is the <b>multiplier</b>. Material gets multiplied by it.</p>
+    ${B?.lastScore?`<div class="cash"><b>Last move · ${B.lastScore.label}</b><p>${B.lastScore.chips} Material × ${B.lastScore.mult} Brilliance = ${B.lastScore.total.toLocaleString()}</p><p>${B.lastScore.bonuses.join(' · ')}</p></div>`:''}
+    ${!MATCH&&!RUN.gauntlet?`<details><summary>Your army &amp; land bonuses</summary><p>${CAMPAIGN_LAND_PLAY[RUN.land]?.text||''}</p>${campaignBuilds(RUN.roster).map(b=>`<p>${b.active?'Active':'Build toward'} · ${b.text}</p>`).join('')}</details>`:''}
     ${example}
     <p style="font-size:14px"><b>Combo:</b> captures back to back (no quiet move in between) multiply Brilliance: ×1.25, ×1.5, up to ×2. A quiet move or losing a piece resets it.</p>
     <p style="font-size:14px">${UI.tiles}, special powers, training and checks raise Material or Brilliance. Checking the same King again and again scores less each time, and repeating a position scores nothing.</p>
@@ -6823,7 +6829,7 @@ async function tapSquare(i){
   }
   if(!busy && mateNow()) return;                                            // v156
   if(sel !== null && legalMoves(sel).includes(i)){ pieceInfo(null); await doMove(sel, i); return; }
-  if(p && p.side === 'me'){ sel = sel === i ? null : i; sel === null ? sfx.tick() : pieceSound(p.t,'pick'); drawBoard(); pieceInfo(sel === null ? null : p);
+  if(p && p.side === 'me'){ sel = sel === i ? null : i; sel === null ? sfx.tick() : pieceSound(p.t,'pick'); drawBoard(); pieceInfo(sel === null ? null : p);if(sel!==null&&attacksOn(B.board,'en').includes(sel))$('#hand').textContent=TYPE[p.t].name+' is threatened · check the red move markers';
     if(sel !== null && p.e) $('#hand').innerHTML = `${eNames(p.e)} ${TYPE[p.t].name}`;
     return; }
   if(p && p.side === 'en'){ sfx.enemyTap(); sel = null; drawBoard(); pieceInfo(p); $('#hand').textContent = 'Tap a piece, then a target'; return; }
@@ -7107,6 +7113,7 @@ async function doMove(from, to, pt){
   drawBoard();
   await animateMove(from, to, victim ? 'lunge' : 'normal');
   if(victim){ const pw = TYPE[victim.t].val >= 90 ? 2 : TYPE[victim.t].val >= 30 ? 1 : 0; shatter(B.board[to] ? to : (from & ~7) | (to & 7), victim.t, 'en', pw); if(!calm) await sleep(T(120)); }
+  if(victim)B.lastCaptureType=mover.t;
   B.board = applyMove(B.board, from, to, pt); epAfter('me', from, to, mover.t === 'P');
   armorBreakOnCheck('me');   // v154 (was: the Beta 4 warning)
   if(!strike) B.enemyOwes = true;                                          // from here the enemy owes a reply (saved: a refresh can't skip it)
@@ -7952,11 +7959,13 @@ function trapEnded(){
   return false;
 }
 async function playScore(res, at){
+  B.lastScore={label:res.label,total:res.total,chips:res.chips,mult:res.mult,bonuses:res.steps.filter(s=>s.label).map(s=>s.label)};
   const hand = $('#hand'), cc = $('#cc'), cm = $('#cm');
   let chips = 0, mult = 0, i = 0;
   hand.textContent = res.label;
   const bump = el => { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); };
   for(const s of res.steps){
+    if(s.label)pop(at,s.label,'fxg');
     if(s.src === 'relic'){ const r = document.querySelector(`[data-rk="${s.k}"]`); if(r){ r.classList.remove('fire'); void r.offsetWidth; r.classList.add('fire'); } }
     if(s.c){ chips += s.c; cc.textContent = chips.toLocaleString(); bump(cc); sfx.chip(i); pop(at, `+${s.c}`, 'fxc'); }
     if(s.m){ mult += s.m; cm.textContent = '×' + +mult.toFixed(1); bump(cm); sfx.mult(i); if(s.src !== 'base') pop(at, `+${s.m} Brilliance`, 'fxm'); }
@@ -7976,14 +7985,14 @@ async function playScore(res, at){
   await new Promise(res2 => { (function f(){ const k = Math.min(1, (performance.now()-t0)/dur); sc.textContent = Math.round(start + (end-start)*k).toLocaleString(); if(k < 1) requestAnimationFrame(f); else res2(); })(); });
   bump(sc); updateHud();
   await sleep(T(200));
-  cc.textContent = '0'; cm.textContent = '×0';
+  cc.textContent = '0'; cm.textContent = '×0';pieceInfo(null);
 }
 const MOVES_TXT = {P:'Moves forward, captures diagonally', N:'Jumps in an L shape', B:'Slides diagonally', R:'Slides straight', Q:'Slides any direction', K:'One square any direction'};
 function pieceInfo(p){
   const el = $('#pinfo'); if(!el) return;
   const cmdBtn = () => { if(MATCH) return ''; const c = cmdState(); return `<button class="btn cmdbtn${cmdMode ? ' on' : ''}${c.max ? '' : ' locked'}" id="cmdBtn" aria-label="Crown Command"><small>${cmdMode ? 'Cancel' : 'Command'}</small><span class="cmdpips">${c.max ? cmdPips(c) : '🔒'}</span></button>`; };
   const bindCmd = () => { const b = el.querySelector('#cmdBtn'); if(b) b.onclick = e => { e.stopPropagation(); cmdMenu(); }; };
-  if(!p){ el.className = 'pinfo idle'; el.innerHTML = `<span class="muted">Tap any piece to see its level and powers</span>${B && !B.done ? cmdBtn() : ''}`; bindCmd(); return; }
+  if(!p){ el.className = 'pinfo idle'; el.innerHTML = `<span class="muted">${B?.lastScore ? `${B.lastScore.label}: ${B.lastScore.chips} × ${B.lastScore.mult} = ${B.lastScore.total.toLocaleString()}${B.lastScore.bonuses.length ? `<br>${B.lastScore.bonuses.join(" · ")}` : ""}` : "Tap any piece to see its level and powers"}</span>${B && !B.done ? cmdBtn() : ''}`; bindCmd(); return; }
   const T0 = TYPE[p.t];
   if(p.side === 'me' && p.t === 'K' && !MATCH){                       // the Crownrunner
     const c = cmdState();
@@ -9909,12 +9918,13 @@ function shop(){
       ${cardRow()}
       ${armyStrip()}
     </div>
+    ${MODE==='campaign'&&!RUN.gauntlet?`<p class="campaign-build-note">${campaignBuildSummary(RUN)}</p>`:''}
     ${recruitSec}
     <h3 class="ssec" style="--sc:#19b5ff">${UI.training}</h3>${trainPanelHTML(true)}
     ${sections}
     <h3 class="ssec" style="--sc:#ff3d5a">Extra lives</h3>
     <div class="offer lifeo wide"><span class="tagline">Extra life · max ${maxLives()}</span><h3><span>Buy a life</span>${hearts(1, true)}</h3><p>A second chance. If you lose a round, you can retry instead of ending your run. <span class="muted">Applies to checkmate, stalemate, Concede, or running out of moves in a Blitz. One purchase per Land; each costs more than the last. You have ${L}.</span></p><button class="btn red" id="buylife" ${cash(lifeCost()) || full || bought ? 'disabled' : ''}>${full ? 'Lives full' : bought ? 'Life purchased this Land' : `$${lifeCost()}`}</button></div>
-    <div class="shopfoot"><span class="shopfoot-balance">Cash <b>$${RUN.money}</b></span><button class="btn ghost" id="reroll" ${cash(restockCost()) ? 'disabled' : ''}>${UI.restock === 'Restock' ? 'Restock shop' : UI.restock} · $${restockCost()}</button><button class="btn" id="next">${RUN.gauntlet ? `Wave ${RUN.gWave}` : 'Leave shop'}</button></div>
+    <div class="shopfoot"><span class="shopfoot-balance">Cash <b>$${RUN.money}</b>${RUN.shopCreditApplied?` · $${RUN.shopCreditApplied} aid supplies received`:""}</span><button class="btn ghost" id="reroll" ${cash(restockCost()) ? 'disabled' : ''}>${UI.restock === 'Restock' ? 'Restock shop' : UI.restock} · $${restockCost()}</button><button class="btn" id="next">${RUN.gauntlet ? `Wave ${RUN.gWave}` : 'Leave shop'}</button></div>
   </section>`);
   bindRelicTips(app, k => { const r = R(RUN.relics[k]); RUN.money += Math.floor(r.cost/2); RUN.relics.splice(k,1); sfx.coin(); save(); shop(); });
   if(RUN.ev && RUN.ev.pend) setTimeout(evShow, 0);   // v139: a pending event comes first
@@ -9997,7 +10007,7 @@ function cityBattleBriefing(boss){
   const target=targetFor(RUN.blind),reward=BLINDS[RUN.blind].reward,bonus=cityRouteReward();
   const roster=(RUN.roster||[]).filter(Boolean),relics=(RUN.relics||[]).filter(Boolean),cards=RUN.cards||[];
   const stage=rulerRoad()?'Final battle':`Fight ${RUN.ante} of ${CIRCUIT_STAGES}`;
-  const rule=RUN.blind===2?boss.desc:'';
+  const rule=RUN.blind===2?boss.desc:'',plan=campaignBossPlan(RUN),landPlay=CAMPAIGN_LAND_PLAY[RUN.land];
   app.innerHTML=`<section class="screen battle-briefing" aria-labelledby="briefingOpponent">
     <div class="briefing-top"><button class="city-text-button" id="bback">Menu</button><span>${hearts(lives())} <b>$${RUN.money}</b></span></div>
     <p class="briefing-kicker">${circuit.name} · ${stage}</p>
@@ -10007,10 +10017,11 @@ function cityBattleBriefing(boss){
     <h1 id="briefingOpponent">${bossName(boss.id)}</h1>
     <div class="briefing-goal"><span>Score <strong>${target.toLocaleString()}</strong> or checkmate</span>${limit?`<b class="briefing-limit">Within ${limit} moves</b>`:''}</div>
     ${rule?`<p class="briefing-rule">${rule}</p>`:''}
+    ${plan?`<p class="campaign-boss-note"><b>${plan.tactic}</b> · ${plan.weakness}</p>`:''}
     <p class="briefing-reward">Win reward <b>$${reward}${bonus?` + $${bonus} route bonus`:''}</b></p>
     <button class="btn" id="play">Start battle</button>
     <button class="city-text-button briefing-rules" id="battleRules">Full battle rules</button>
-    <details class="briefing-details"><summary>District &amp; route details</summary><div>${trait?`<p><b>${trait.tr}</b><br>${trait.line}</p>`:''}${cityRouteNote()}${csMyst(land(),RUN.circuit)?`<p>${csMyst(land(),RUN.circuit)}</p>`:''}<p>${stage} · ${rulerRoad()?'Win to claim the crown.':RUN.ante<CIRCUIT_STAGES?'Win to reach the next stop.':'Win to clear this circuit.'}</p></div></details>
+    <details class="briefing-details"><summary>Land, army &amp; route details</summary><div>${landPlay?`<p><b>${landPlay.name}</b> · ${landPlay.text}</p>`:""}<p>${campaignBuildSummary(RUN)}</p>${trait?`<p><b>${trait.tr}</b><br>${trait.line}</p>`:''}${cityRouteNote()}${csMyst(land(),RUN.circuit)?`<p>${csMyst(land(),RUN.circuit)}</p>`:''}<p>${stage} · ${rulerRoad()?'Win to claim the crown.':RUN.ante<CIRCUIT_STAGES?'Win to reach the next stop.':'Win to clear this circuit.'}</p></div></details>
     <div class="briefing-prep"><button id="armyReview">Review army <small>${roster.length} pieces</small></button><button id="trainbtn">Training <small>$${RUN.money} available</small></button></div>
     ${relics.length||cards.length?`<details class="briefing-details"><summary>Equipment · ${relics.length} relics · ${cards.length} cards</summary><div>${relics.length?relicRow():''}${cards.length?`<p>${cards.map(id=>`<b style="color:${C(id).col}">${C(id).name}</b>`).join(', ')}</p>`:''}</div></details>`:''}
   </section>`;
@@ -10131,23 +10142,26 @@ function journeyRenderEncounter(event,node,onAction,onSquare){
  if(PACK!==RUN.land)setPack(RUN.land);
  onTitle=false;setLandBg(RUN.land);setCircuitData(RUN.circuit);app.classList.remove('play','training-play','patrol-play');
  const esc=value=>String(value||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+ const goal=journeyPatrolGoal(event);
  const battle=event.phase==='skirmish',won=event.phase==='won',lost=event.phase==='escaped';
  if(battle)return journeyRenderPatrol(event,node,onAction,onSquare);
  const bonus={cache:'$3 supplies collected',market:'$5 supplies collected',shelter:'Next fight: 20% lower target'}[event.kind]||(node.type==='risky'?'Next fight: +20% target · +$8 on victory':'');
- const button=(id,label,ghost=false)=>'<button class="btn '+(ghost?'ghost':'')+'" id="'+id+'">'+esc(label)+'</button>';
+ const button=(id,label,ghost=false,disabled=false)=>'<button class="btn '+(ghost?'ghost':'')+'" id="'+id+'" '+(disabled?'disabled':'')+'>'+esc(label)+'</button>';
  let content='<div class="stop-kicker">'+esc((PACKS.find(p=>p.id===RUN.land)||{}).name)+' · ROADSIDE ENCOUNTER</div><h1>'+esc(node.name)+'</h1><h2>'+esc(event.title)+'</h2><p class="stop-story">'+esc(event.text)+'</p>';
  if(bonus)content+='<div class="stop-benefit">'+esc(bonus)+'</div>';
  if(won||lost){
-  content+='<div class="stop-result" role="status">'+(won?'The patrol retreats. $2 added to your purse.':'Your company finds a way around the patrol and regroups. Your army and lives are safe.')+'</div>'+button('stopContinue','Continue journey');
+  content+='<div class="stop-result" role="status">'+(won?goal.win+' $'+goal.reward+' added to your purse.':'Your company finds a way around the patrol and regroups. Your army and lives are safe.')+'</div>'+button('stopContinue','Continue journey');
  }else if(event.kind==='ambush'){
-  content+='<p class="stop-note">Fight a short skirmish for $2, or slip past the patrol. Your Campaign army and lives are safe.</p>'+button('stopFight','Fight the patrol · win $2')+button('stopRetreat','Slip away · continue',true);
+  content+='<p class="stop-note">'+esc(goal.text)+' Win $'+goal.reward+'. Your Campaign army and lives are safe.</p>'+button('stopFight',goal.name+' · win $'+goal.reward)+button('stopRetreat','Slip away · continue',true);
+ }else if(event.kind==='aid'){
+  content+=button('stopHelp','Help · $3 now, $5 at next shop',false,RUN.money<3)+button('stopContinue','Walk on',true);
  }else{
   if(event.phase==='story')content+='<blockquote class="stop-rumor">'+esc(event.story)+'</blockquote>';
   else if(event.story)content+=button('stopListen','Learn about this place',true);
   content+=button('stopContinue',event.kind==='market'?'Enter shop':event.kind==='battle'?'Enter battle':'Continue journey');
  }
  app.innerHTML='<section class="screen roadside-encounter">'+content+'</section>';
- const actions={'#stopFight':'fight','#stopRetreat':'retreat','#stopListen':'listen','#stopContinue':'continue'};
+ const actions={'#stopHelp':'help','#stopFight':'fight','#stopRetreat':'retreat','#stopListen':'listen','#stopContinue':'continue'};
  for(const [selector,action]of Object.entries(actions)){const button=app.querySelector(selector);if(button)button.onclick=()=>onAction(action);}
  const soundButton=app.querySelector('#stopSound');if(soundButton)soundButton.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('gambit-sound',soundOn?'on':'off');}catch(e){}if(soundOn)pieceSound('N','move');soundButton.textContent='Sound: '+(soundOn?'On':'Off');};
  app.querySelectorAll('[data-stop-square]').forEach(button=>button.onclick=()=>onSquare(Number(button.dataset.stopSquare)));
@@ -10157,6 +10171,7 @@ function journeyRenderEncounter(event,node,onAction,onSquare){
 /* Patrols use the main battle's layout, board IDs, theme and move markers.
    Only their objective and actions differ; Campaign battle state stays separate. */
 function journeyRenderPatrol(event,node,onAction,onSquare){
+ const goal=journeyPatrolGoal(event);
  const board=event.board,selected=event.selected,legal=selected==null?[]:legalFor(board,selected);
  const esc=value=>String(value||'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
  const remaining=Math.max(0,(event.limit||6)-(event.moves||0)),thinking=event.message==='The patrol is thinking…';
@@ -10164,6 +10179,7 @@ function journeyRenderPatrol(event,node,onAction,onSquare){
  const squares=board.map((q,i)=>{
   const r=Math.floor(i/8),c=i%8,classes=['sq',(r+c)%2?'d':'l'];
   if(i===selected)classes.push('sel');
+  if(event.objective==='escape'&&[24,32].includes(i))classes.push('patrol-exit');if(q?.courier)classes.push('patrol-target');if(q?.escort)classes.push('patrol-escort');
   if(event.lastMove?.[0]===i)classes.push('lastf');if(event.lastMove?.[1]===i)classes.push('lastt');if(event.enemyMove?.[1]===i)classes.push('lastte');
   if(q?.t==='K'&&inCheck(board,q.side))classes.push('threat','chk');
   let marker='';if(legal.includes(i)){
@@ -10172,11 +10188,11 @@ function journeyRenderPatrol(event,node,onAction,onSquare){
   }
   return '<button type="button" class="'+classes.join(' ')+'" data-i="'+i+'" data-stop-square="'+i+'" aria-label="'+'abcdefgh'[c]+(8-r)+(q?', '+(q.side==='me'?'your ':'enemy ')+TYPE[q.t].name:'')+'" aria-pressed="'+(selected===i)+'">'+(q?pieceSVG(q.t,q.side,q.e):'')+marker+(c===0?'<span class="coord">'+(8-r)+'</span>':'')+'</button>';
  }).join('');
- const info=piece?'<span class="pi">'+pieceSVG(piece.t,piece.side,piece.e)+'</span><div class="pt"><b>'+(piece.side==='en'?'Enemy ':'Your ')+esc(TYPE[piece.t].name)+'</b><span class="ab">'+esc(MOVES_TXT[piece.t])+'</span></div>':'<span class="muted">Tap a piece to see its moves</span>';
+ const info=piece?'<span class="pi">'+pieceSVG(piece.t,piece.side,piece.e)+'</span><div class="pt"><b>'+(piece.side==='en'?'Enemy ':'Your ')+esc(TYPE[piece.t].name)+'</b><span class="ab">'+esc(MOVES_TXT[piece.t])+'</span></div>':'<span class="muted">'+esc(goal.text)+'</span>';
  setLandBg(null);app.classList.add('play','patrol-play');
  document.body.dataset.mood='calm';document.body.dataset.bround=RUN.blind||0;document.body.dataset.opp='normal';document.body.dataset.otreat='';delete document.body.dataset.ruler;delete document.body.dataset.ckf;
- app.innerHTML=`<div class="phud"><div class="pblind"><b>Roadside patrol</b><span class="patrol-location">${esc(node.name)}</span></div><div class="pstats"><div class="blitzmv${remaining<=3?' low':''}"><small>Moves left</small><b id="mv">${remaining}</b></div><div><small>Cash</small><b class="money" id="cash">$${RUN.money}</b></div></div></div>
-  <div class="pscore"><div class="sc"><small>Win reward</small><b>$2</b></div><div class="cbox chips"><small>Capture</small><span>Rook</span></div><span class="x">or</span><div class="cbox mult"><small>Deliver</small><span>Mate</span></div></div>
+ app.innerHTML=`<div class="phud"><div class="pblind"><b>${esc(goal.name)}</b><span class="patrol-location">${esc(node.name)}</span></div><div class="pstats"><div class="blitzmv${remaining<=3?' low':''}"><small>Moves left</small><b id="mv">${remaining}</b></div><div><small>Cash</small><b class="money" id="cash">$${RUN.money}</b></div></div></div>
+  <div class="pscore"><div class="sc"><small>Win reward</small><b>$${goal.reward}</b></div><div class="cbox chips"><small>${esc(goal.verb)}</small><span>${esc(goal.short)}</span></div><span class="x">or</span><div class="cbox mult"><small>Deliver</small><span>Mate</span></div></div>
   <div class="pbar"><i style="width:${remaining/(event.limit||6)*100}%"></i><span class="ptgt">${remaining} moves remaining</span></div>
   <div class="handrow"><span class="hand stop-battle-status" id="hand" role="status">${esc(event.message||'Tap a piece, then a target')}</span><span class="mood${inCheck(board,'me')?' check':''}" id="mood"><i></i><span>${thinking?'Patrol thinking':inCheck(board,'me')?'King in check':'Your turn'}</span></span></div>
   <div class="boardArea"><div class="boardWrap" id="bw"><div class="bdecor" id="bdecor"></div><div class="board patrol-board" id="board" aria-label="Roadside patrol chessboard">${squares}</div><div class="fxl" id="fxl"></div></div></div>
@@ -10185,7 +10201,7 @@ function journeyRenderPatrol(event,node,onAction,onSquare){
  app.querySelectorAll('[data-stop-square]').forEach(button=>button.onclick=()=>onSquare(Number(button.dataset.stopSquare)));
  app.querySelector('#stopRetreat').onclick=()=>onAction('retreat');
  app.querySelector('#stopMenu').onclick=()=>{save();title();};
- app.querySelector('#stopRules').onclick=()=>modal('<h2>Roadside patrol</h2><p>Capture the patrol’s Rook or deliver checkmate within '+(event.limit||6)+' moves to win $2. Protect your King: the patrol replies after each move.</p><p>Your Campaign army and lives are safe. Slip away to continue travelling without the reward.</p><button class="btn" id="patrolRulesDone">Back to patrol</button>','#patrolRulesDone');
+ app.querySelector('#stopRules').onclick=()=>modal('<h2>'+esc(goal.name)+'</h2><p>'+esc(goal.text)+' '+(event.limit||6)+' moves; win $'+goal.reward+'. Protect your King: the patrol replies after each move.</p><p>Your Campaign army and lives are safe. Slip away to continue travelling without the reward.</p><button class="btn" id="patrolRulesDone">Back to patrol</button>','#patrolRulesDone');
  const sound=app.querySelector('#stopSound');sound.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('gambit-sound',soundOn?'on':'off');}catch(e){}if(soundOn)pieceSound('N','move');sound.textContent='Sound: '+(soundOn?'On':'Off');};
  applyLandTheme();drawLandDecor();csBoard();
 }
@@ -10272,7 +10288,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     return result;
   };
   function worldData(){
-    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
+    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,money:RUN.money,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
   }
   function worldRequest(){
     const r=cityRouteRecord();
@@ -10286,7 +10302,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     const r=cityRouteRecord(),g=journeyGraph(worldData());
     if(r.encounter && !r.encounters?.[r.encounter]?.resolved)return worldShowEncounter();
     if(!r.hop){
-      if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      const edge=g.active.find(e=>e.to===d.node);
+      if(!edge)return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      const toll=edge.shortcut?edge.cost||0:0;if(RUN.money<toll)return journeyPost('journey-error',{message:'This shortcut costs $'+toll+'. Choose another route.'});
+      RUN.money-=toll;r.tolls=(r.tolls||0)+toll;
       r.notice=null;r.hop=d.node;save();
     }
     journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
@@ -10300,7 +10319,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     r.edges.push([r.position,node.id]);r.position=node.id;r.hop=null;
     if(!r.visited.includes(node.id)){
       r.visited.push(node.id);
-      if(node.type==='supply')RUN.money+=5;
+      if(node.type==='supply'){RUN.shopCreditApplied=RUN.shopCredit||0;RUN.money+=5+RUN.shopCreditApplied;RUN.shopCredit=0;}
       if(node.type==='cache')RUN.money+=3;
       if(node.type==='safer'||node.type==='risky'){r.route=node.type;RUN.fightTarget=null;}
     }
@@ -10328,9 +10347,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldEncounterAction(action){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    if(action==='help'&&event.kind==='aid'){if(RUN.money<3)return;RUN.money-=3;RUN.shopCredit=(RUN.shopCredit||0)+5;event.resolved=true;r.encounter=null;r.notice={node:event.node,name:event.place.name,text:'Supplies sent ahead: $5 will be waiting at your next shop.'};save();return worldProceed(event.place);}
     if(action==='listen'&&event.phase==='intro'&&event.kind!=='ambush'){event.phase='story';save();return worldShowEncounter();}
     if(action==='fight'&&event.kind==='ambush'&&event.phase==='intro'){
-      event.phase='skirmish';event.patrolVersion=2;event.limit=10;event.board=journeySkirmishBoard(event.variant,2);event.moves=0;event.selected=null;save();return worldShowEncounter();
+      event.phase='skirmish';event.objective=event.objective||'hunt';event.patrolVersion=event.objective==='hunt'?2:3;event.limit=journeyPatrolGoal(event).limit;event.board=journeyPatrolSetup(event.objective,event.variant);event.moves=0;event.selected=null;save();return worldShowEncounter();
     }
     if(action==='retreat'&&event.kind==='ambush'){
       event.phase='escaped';event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
@@ -10341,7 +10361,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldPieceSound(...args){try{pieceSound(...args);}catch(e){}}
   function worldSkirmishWin(event){
-    event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=2;}save();return worldShowEncounter();
+    event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=journeyPatrolGoal(event).reward;}save();return worldShowEncounter();
   }
   let worldSkirmishBusy = false;
   async function worldSkirmishTap(square){
@@ -10366,7 +10386,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       board[square]=board[from];board[from]=null;
       if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
       const next={...event,board,selected:null,inspected:null,lastMove:[from,square],enemyMove:null,moves:(event.moves||0)+1};
-      if(victim&&victim.side==='en'&&victim.t==='R'){Object.assign(event,next);return worldSkirmishWin(event);}
+      if(journeyPatrolStatus(next)==='won'){Object.assign(event,next);return worldSkirmishWin(event);}
       const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
       if(!replies.length){if(inCheck(board,'en')){Object.assign(event,next);return worldSkirmishWin(event);}next.phase='escaped';}
       else{
@@ -10375,7 +10395,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
         if(typeof sleep==='function')await sleep(typeof calm!=='undefined'&&calm?0:180);
         if(!current())return;
         replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);
-        const move=event.patrolVersion===2?journeyPatrolReply(board,legalFor,inCheck):replies[0];
+        const move=event.patrolVersion>=2?journeyPatrolReply(board,legalFor,inCheck,next):replies[0];
         const mover=board[move.from],capture=board[move.to],dr=Math.floor(move.to/8)-Math.floor(move.from/8);
         worldPieceSound(mover.t,capture?'capture':'move',true);
         await animate(move.from,move.to,capture?'lunge':dr<0?'retreat':mover.t==='P'?'stomp':'normal');
@@ -10384,9 +10404,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
         if(mover.t==='P'&&(move.to<8||move.to>=56))board[move.to]={...mover,t:'Q'};
         next.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
         const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
-        if(!canMove||next.moves>=(event.limit||6))next.phase='escaped';
+        const status=journeyPatrolStatus(next,true);
+        if(!canMove)next.phase='escaped';else if(status!=='skirmish')next.phase=status;else if(next.moves>=(event.limit||6))next.phase='escaped';
       }
-      Object.assign(event,next);save();return worldShowEncounter();
+      Object.assign(event,next);if(event.phase==='won')return worldSkirmishWin(event);save();return worldShowEncounter();
     }finally{worldSkirmishBusy=false;}
   }
 

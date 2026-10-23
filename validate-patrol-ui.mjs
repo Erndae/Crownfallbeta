@@ -8,7 +8,7 @@ const node=id=>{if(!nodes.has(id))nodes.set(id,{onclick:null,textContent:''});re
 const app={innerHTML:'',classList:{add(...xs){xs.forEach(x=>classes.add(x));},remove(...xs){xs.forEach(x=>classes.delete(x));}},querySelector:node,querySelectorAll:()=>[]};
 const board=Array(64).fill(null);board[56]={t:'R',side:'me'};board[62]={t:'K',side:'me'};board[0]={t:'R',side:'en'};board[4]={t:'K',side:'en'};
 const c={app,PACK:'street',RUN:{land:'street',circuit:'downtown',blind:2,money:17},B:{campaign:'untouched'},onTitle:true,PACKS:[{id:'street',name:'Crown City'}],document:{querySelectorAll:()=>[],body:{dataset:{ruler:'1',ckf:'1'}}},window:{scrollTo(){calls.push('scroll');}},TYPE:{R:{name:'Rook'},K:{name:'King'}},MOVES_TXT:{R:'Moves in straight lines.',K:'Moves one square.'},soundOn:true,localStorage:{setItem(){}},pieceSound(){},setLandBg:()=>{},setCircuitData(){},setPack(){},pieceSVG:(t,side)=>'<svg class="pc '+side+'" data-t="'+t+'"></svg>',legalFor:()=>[0,48],inCheck:(b,side)=>side==='en',attacksOn:()=>[48],applyMove:b=>b,save(){calls.push('save');},title(){calls.push('menu');},modal:(html,selector)=>{calls.push({html,selector});},applyLandTheme(){calls.push('theme');},drawLandDecor(){calls.push('decor');},csBoard(){calls.push('circuit');}};
-vm.createContext(c);vm.runInContext(source,c);
+vm.createContext(c);vm.runInContext(readFileSync('journey-events.js','utf8')+source,c);
 const event={phase:'skirmish',board,selected:56,moves:1,limit:10,lastMove:[57,42],enemyMove:[7,0]},place={name:'Ferry Landing · East overpass'};
 c.event=event;c.place=place;c.action=a=>actions.push(a);
 vm.runInContext('journeyRenderEncounter(event,place,action,()=>{})',c);

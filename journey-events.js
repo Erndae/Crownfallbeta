@@ -17,10 +17,11 @@ const JOURNEY_DISTRICT_STORIES={
 function journeyEventHash(value){let h=2166136261;for(const char of value){h^=char.charCodeAt(0);h=Math.imul(h,16777619);}return h>>>0;}
 function journeyEventFor(data,node){
  const land=data.land||'street',scene=JOURNEY_SCENES[land]||JOURNEY_SCENES.street,hash=journeyEventHash(land+'|'+data.circuitId+'|'+data.stage+'|'+node.id);
- const kind=node.type==='fight'?'battle':node.type==='supply'?'market':node.type==='cache'?'cache':node.type==='safer'?'shelter':(node.type==='risky'&&hash%3===0||node.type==='road'&&hash%5===0)?'ambush':hash%2?'rumor':'quiet';
- const titles={quiet:'It’s quiet here.',rumor:'A story along the road',ambush:'An unexpected patrol',market:'A welcome at the market',cache:'Something left behind',shelter:'A place to catch your breath',battle:node.boss?'At the stronghold gates':'Your next battle awaits'};
- const text=kind==='battle'?'Your army reaches '+node.name+'. '+(node.boss?'The guards fall back toward their ruler.':'The road opens onto a defended position.')+' Take a moment to prepare before the next confrontation.':Array.isArray(scene[kind])?scene[kind][hash%scene[kind].length]:scene[kind];
- return {node:node.id,kind,title:titles[kind],text,story:(JOURNEY_DISTRICT_STORIES[land]||JOURNEY_DISTRICT_STORIES.street)[data.circuitId]||'',phase:'intro',resolved:false,variant:hash%3};
+ let kind=node.type==='fight'?'battle':node.type==='supply'?'market':node.type==='cache'?'cache':node.type==='safer'?'shelter':(node.type==='risky'&&hash%3===0||node.type==='road'&&hash%5===0)?'ambush':hash%2?'rumor':'quiet';
+ if(kind==='rumor'&&hash%3===0)kind='aid';
+ const titles={aid:'Supplies for the road',quiet:'It’s quiet here.',rumor:'A story along the road',ambush:'An unexpected patrol',market:'A welcome at the market',cache:'Something left behind',shelter:'A place to catch your breath',battle:node.boss?'At the stronghold gates':'Your next battle awaits'};
+ const text=kind==='aid'?'A stranded traveler needs $3 to send supplies ahead. Help now, and collect $5 at the next shop you choose.':kind==='battle'?'Your army reaches '+node.name+'. '+(node.boss?'The guards fall back toward their ruler.':'The road opens onto a defended position.')+' Take a moment to prepare before the next confrontation.':Array.isArray(scene[kind])?scene[kind][hash%scene[kind].length]:scene[kind];
+ return {node:node.id,kind,title:titles[kind],text,story:(JOURNEY_DISTRICT_STORIES[land]||JOURNEY_DISTRICT_STORIES.street)[data.circuitId]||'',phase:'intro',resolved:false,variant:hash%3,...(kind==='ambush'?{objective:['hunt','escape','hold','courier'][(hash>>>3)%4]}:{})};
 }
 function journeySkirmishBoard(variant,version=1){
  const setups=[[[60,'K','me'],[56,'R','me'],[57,'N','me'],[4,'K','en'],[42,'R','en'],[24,'P','en']],[[60,'K','me'],[58,'B','me'],[62,'N','me'],[4,'K','en'],[40,'R','en'],[15,'P','en']],[[60,'K','me'],[56,'R','me'],[62,'N','me'],[4,'K','en'],[16,'R','en'],[23,'P','en']]];
@@ -34,14 +35,18 @@ function journeySkirmishBoard(variant,version=1){
 
 // Two-ply patrol: evaluate each reply against the player's strongest counter.
 // Pure board copies keep search separate from the saved encounter and Campaign army.
-function journeyPatrolReply(board,legal,check){
+function journeyPatrolReply(board,legal,check,event={}){
  const weights={K:0,Q:900,R:550,B:330,N:320,P:100};
  const moves=(b,side)=>b.flatMap((p,from)=>p&&p.side===side?legal(b,from).filter(to=>b[to]?.t!=='K').map(to=>({from,to})):[]);
  const apply=(b,m)=>{const n=b.slice();n[m.to]={...n[m.from]};n[m.from]=null;if(n[m.to].t==='P'&&(m.to<8||m.to>=56))n[m.to].t='Q';return n;};
  const value=b=>{
-  if(!b.some(p=>p?.side==='en'&&p.t==='R'))return -100000;
+  const objective=event.objective||'hunt';
+  if(objective==='hunt'&&!b.some(p=>p?.side==='en'&&p.t==='R'))return -100000;
+  if(objective==='courier'&&!b.some(p=>p?.side==='en'&&p.courier))return -100000;
+  if(objective==='hold'&&!b.some(p=>p?.side==='me'&&p.escort))return 100000;
+  if(objective==='escape'&&[24,32].some(i=>b[i]?.side==='me'&&b[i].t==='K'))return -100000;
   let score=0;
-  b.forEach((p,i)=>{if(!p)return;const center=7-Math.abs(3.5-i%8)-Math.abs(3.5-Math.floor(i/8));score+=(p.side==='en'?1:-1)*(weights[p.t]+(p.t==='K'?0:center*3));});
+  b.forEach((p,i)=>{if(!p)return;const center=7-Math.abs(3.5-i%8)-Math.abs(3.5-Math.floor(i/8));score+=(p.side==='en'?1:-1)*(weights[p.t]+(p.courier||p.escort?250:0)+(p.t==='K'?0:center*3));});
   if(check(b,'me'))score+=28;if(check(b,'en'))score-=28;return score;
  };
  let best=null,bestScore=-Infinity;
@@ -54,4 +59,30 @@ function journeyPatrolReply(board,legal,check){
   if(score>bestScore){bestScore=score;best=move;}
  }
  return best;
+}
+
+const JOURNEY_PATROL_GOALS={
+ hunt:{name:'Break the patrol',short:'Rook',verb:'Capture',reward:2,limit:10,text:'Capture the patrol’s Rook or deliver checkmate.',win:'The patrol retreats.'},
+ escape:{name:'Run the blockade',short:'Exit',verb:'Reach',reward:3,limit:10,text:'Move your King onto either marked exit, or deliver checkmate.',win:'Your company escapes the blockade.'},
+ hold:{name:'Guard the convoy',short:'6 turns',verb:'Survive',reward:3,limit:6,text:'Keep the marked supply Rook alive through 6 patrol replies, or deliver checkmate.',win:'The supply convoy reaches safety.'},
+ courier:{name:'Intercept the courier',short:'Courier',verb:'Capture',reward:4,limit:10,text:'Capture the marked courier before time runs out, or deliver checkmate.',win:'The courier’s dispatch is yours.'}
+};
+function journeyPatrolGoal(event={}){return JOURNEY_PATROL_GOALS[event.objective]||JOURNEY_PATROL_GOALS.hunt;}
+function journeyPatrolSetup(objective,variant=0){
+ if(!objective||objective==='hunt')return journeySkirmishBoard(variant,2);
+ const rows={
+  escape:[[44,'K','me'],[56,'R','me'],[45,'N','me'],[53,'P','me'],[54,'P','me'],[4,'K','en'],[7,'R','en'],[18,'B','en'],[11,'P','en'],[30,'P','en']],
+  hold:[[62,'K','me'],[51,'R','me','escort'],[42,'N','me'],[34,'B','me'],[53,'P','me'],[54,'P','me'],[4,'K','en'],[7,'R','en'],[18,'B','en'],[21,'N','en'],[11,'P','en'],[13,'P','en']],
+  courier:[[62,'K','me'],[56,'Q','me'],[42,'N','me'],[34,'B','me'],[53,'P','me'],[4,'K','en'],[7,'R','en'],[28,'P','en','courier'],[21,'N','en'],[11,'P','en'],[22,'P','en']]
+ };
+ const board=Array(64).fill(null);for(const [i,t,side,tag]of rows[objective]||rows.escape)board[i]={t,side,...(tag?{[tag]:true}:{})};return board;
+}
+function journeyPatrolStatus(event,afterReply=false){
+ const b=event.board,objective=event.objective||'hunt';
+ if(objective==='hold'&&!b.some(p=>p?.side==='me'&&p.escort))return 'escaped';
+ if(objective==='hunt'&&!b.some(p=>p?.side==='en'&&p.t==='R'))return 'won';
+ if(objective==='courier'&&!b.some(p=>p?.side==='en'&&p.courier))return 'won';
+ if(objective==='escape'&&[24,32].some(i=>b[i]?.side==='me'&&b[i].t==='K'))return 'won';
+ if(objective==='hold'&&afterReply&&(event.moves||0)>=6)return 'won';
+ return 'skirmish';
 }

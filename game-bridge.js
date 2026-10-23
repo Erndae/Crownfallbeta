@@ -55,7 +55,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     return result;
   };
   function worldData(){
-    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
+    return {land:RUN.land,circuitId:RUN.circuit,stage:RUN.ante,money:RUN.money,ruler:RUN.circuit==='ruler',record:cityRouteRecord()};
   }
   function worldRequest(){
     const r=cityRouteRecord();
@@ -69,7 +69,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     const r=cityRouteRecord(),g=journeyGraph(worldData());
     if(r.encounter && !r.encounters?.[r.encounter]?.resolved)return worldShowEncounter();
     if(!r.hop){
-      if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      const edge=g.active.find(e=>e.to===d.node);
+      if(!edge)return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
+      const toll=edge.shortcut?edge.cost||0:0;if(RUN.money<toll)return journeyPost('journey-error',{message:'This shortcut costs $'+toll+'. Choose another route.'});
+      RUN.money-=toll;r.tolls=(r.tolls||0)+toll;
       r.notice=null;r.hop=d.node;save();
     }
     journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
@@ -83,7 +86,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     r.edges.push([r.position,node.id]);r.position=node.id;r.hop=null;
     if(!r.visited.includes(node.id)){
       r.visited.push(node.id);
-      if(node.type==='supply')RUN.money+=5;
+      if(node.type==='supply'){RUN.shopCreditApplied=RUN.shopCredit||0;RUN.money+=5+RUN.shopCreditApplied;RUN.shopCredit=0;}
       if(node.type==='cache')RUN.money+=3;
       if(node.type==='safer'||node.type==='risky'){r.route=node.type;RUN.fightTarget=null;}
     }
@@ -111,9 +114,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldEncounterAction(action){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    if(action==='help'&&event.kind==='aid'){if(RUN.money<3)return;RUN.money-=3;RUN.shopCredit=(RUN.shopCredit||0)+5;event.resolved=true;r.encounter=null;r.notice={node:event.node,name:event.place.name,text:'Supplies sent ahead: $5 will be waiting at your next shop.'};save();return worldProceed(event.place);}
     if(action==='listen'&&event.phase==='intro'&&event.kind!=='ambush'){event.phase='story';save();return worldShowEncounter();}
     if(action==='fight'&&event.kind==='ambush'&&event.phase==='intro'){
-      event.phase='skirmish';event.patrolVersion=2;event.limit=10;event.board=journeySkirmishBoard(event.variant,2);event.moves=0;event.selected=null;save();return worldShowEncounter();
+      event.phase='skirmish';event.objective=event.objective||'hunt';event.patrolVersion=event.objective==='hunt'?2:3;event.limit=journeyPatrolGoal(event).limit;event.board=journeyPatrolSetup(event.objective,event.variant);event.moves=0;event.selected=null;save();return worldShowEncounter();
     }
     if(action==='retreat'&&event.kind==='ambush'){
       event.phase='escaped';event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
@@ -124,7 +128,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   }
   function worldPieceSound(...args){try{pieceSound(...args);}catch(e){}}
   function worldSkirmishWin(event){
-    event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=2;}save();return worldShowEncounter();
+    event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=journeyPatrolGoal(event).reward;}save();return worldShowEncounter();
   }
   let worldSkirmishBusy = false;
   async function worldSkirmishTap(square){
@@ -149,7 +153,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       board[square]=board[from];board[from]=null;
       if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
       const next={...event,board,selected:null,inspected:null,lastMove:[from,square],enemyMove:null,moves:(event.moves||0)+1};
-      if(victim&&victim.side==='en'&&victim.t==='R'){Object.assign(event,next);return worldSkirmishWin(event);}
+      if(journeyPatrolStatus(next)==='won'){Object.assign(event,next);return worldSkirmishWin(event);}
       const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
       if(!replies.length){if(inCheck(board,'en')){Object.assign(event,next);return worldSkirmishWin(event);}next.phase='escaped';}
       else{
@@ -158,7 +162,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
         if(typeof sleep==='function')await sleep(typeof calm!=='undefined'&&calm?0:180);
         if(!current())return;
         replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);
-        const move=event.patrolVersion===2?journeyPatrolReply(board,legalFor,inCheck):replies[0];
+        const move=event.patrolVersion>=2?journeyPatrolReply(board,legalFor,inCheck,next):replies[0];
         const mover=board[move.from],capture=board[move.to],dr=Math.floor(move.to/8)-Math.floor(move.from/8);
         worldPieceSound(mover.t,capture?'capture':'move',true);
         await animate(move.from,move.to,capture?'lunge':dr<0?'retreat':mover.t==='P'?'stomp':'normal');
@@ -167,9 +171,10 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
         if(mover.t==='P'&&(move.to<8||move.to>=56))board[move.to]={...mover,t:'Q'};
         next.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
         const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
-        if(!canMove||next.moves>=(event.limit||6))next.phase='escaped';
+        const status=journeyPatrolStatus(next,true);
+        if(!canMove)next.phase='escaped';else if(status!=='skirmish')next.phase=status;else if(next.moves>=(event.limit||6))next.phase='escaped';
       }
-      Object.assign(event,next);save();return worldShowEncounter();
+      Object.assign(event,next);if(event.phase==='won')return worldSkirmishWin(event);save();return worldShowEncounter();
     }finally{worldSkirmishBusy=false;}
   }
 

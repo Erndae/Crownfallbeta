@@ -55,7 +55,7 @@ function journeyGraph(data={}){
  const li=Math.max(0,Object.keys(JOURNEY_WORLD).indexOf(land)),ci=Math.max(0,['downtown','rooftop','harbor','midnight','ruler'].indexOf(circuit));
  const nodes=[],edges=[],byId={};
  const add=n=>{nodes.push(n);byId[n.id]=n;return n;};
- const link=(a,b)=>edges.push({from:a.id,to:b.id});
+ const link=(a,b,extra={})=>edges.push({from:a.id,to:b.id,...extra});
  const ys=[460,650,380,260,510];
  const battle=(i)=>add({id:'fight-'+i,stage:i,type:i?'fight':'entry',name:i?journeyStagePlace(land,ruler?'ruler':circuit,i):'District entrance',x:160+i*1040,y:ys[(i+li+ci)%5],boss:i===count});
  let prev=battle(0);
@@ -65,7 +65,7 @@ function journeyGraph(data={}){
   const suffix={safer:terrain[0],supply:terrain[1],risky:terrain[2],cache:terrain[3],road:'junction'};
   const layer=(types,col)=>types.map((type,j)=>add({id:`s${i}-${col}${j}`,stage:i,type,name:place+' · '+(col==='a'?'West ':'East ')+suffix[type],district:place,short:(col==='a'?'West ':'East ')+suffix[type],x:base+(col==='a'?330:680)+(j%2?20:-20),y:types.length===2?[240,690][j]:types.length===4?[130,350,570,790][j]:[150,450,760][j]}));
   const a=layer(layout.a,'a'),b=layer(layout.b,'b');a.forEach(n=>link(prev,n));
-  layout.ab.forEach((targets,j)=>targets.forEach(k=>link(a[j],b[k])));layout.direct.forEach(j=>link(a[j],end));b.forEach(n=>link(n,end));
+  layout.ab.forEach((targets,j)=>targets.forEach(k=>link(a[j],b[k])));layout.direct.forEach(j=>link(a[j],end,{shortcut:true,cost:2}));b.forEach(n=>link(n,end));
   // A late junction must branch too. Keep the existing direct battle edge
   // so committed journeys and old saves retain their original destination.
   b.filter(n=>n.type==='road').forEach(junction=>{

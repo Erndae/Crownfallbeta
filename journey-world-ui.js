@@ -1,6 +1,6 @@
 'use strict';
 const legacyCards=document.querySelector('.route-cards').innerHTML;
-function worldBenefit(type,node,graph=networkPlan){if(type==='road'&&node)return journeyJunctionSummary(graph,node);return {safer:'Next fight is 20% easier.',risky:'Next fight is 20% harder. Win $8 extra.',supply:'Get $5, then recruit, train and shop.',cache:'Collect $3, then keep travelling.',road:'Choose an onward connection.',fight:'Enter the battle at this location.'}[type]||'Continue your journey.';}
+function worldBenefit(type,node,graph=networkPlan){if(node){const edge=graph.edges.find(e=>e.from===graph.position&&e.to===node.id);if(edge?.shortcut)return 'Shortcut · $'+edge.cost+' toll. Bypass remaining roadside stops and enter battle.';}if(type==='road'&&node)return journeyJunctionSummary(graph,node);return {safer:'Next fight is 20% easier.',risky:'Next fight is 20% harder. Win $8 extra.',supply:'Get $5, then recruit, train and shop.',cache:'Collect $3, then keep travelling.',road:'Choose an onward connection.',fight:'Enter the battle at this location.'}[type]||'Continue your journey.';}
 function restoreLegacyCards(){
  const cards=document.querySelector('.route-cards');cards.innerHTML=legacyCards;
  cards.querySelectorAll('button').forEach(b=>{const icon=b.querySelector('.route-card-top svg');if(icon)icon.outerHTML=journeyStopLogo(b.dataset.route);b.onclick=()=>selectRoute(b.dataset.route);});
@@ -24,7 +24,7 @@ function worldText(parent,text,y,cls,max=24){
  return lines.length;
 }
 function buildWorldNetwork(data){
- networkData=data;applyJourneyLand(data);$('#mapInstructions').textContent='Tap a lit stop symbol to choose your destination.';networkPlan=journeyGraph(data);const g=networkPlan,svg=document.querySelector('.route-overlay');
+ networkData=data;applyJourneyLand(data);$('#mapInstructions').textContent=(Number.isFinite(data.money)?'Cash $'+data.money+' · ':'')+'Tap a lit stop symbol to choose your destination.';networkPlan=journeyGraph(data);const g=networkPlan,svg=document.querySelector('.route-overlay');
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',journeyLand(data.land).name+' · connected world locations');
  const history=Object.values(data.history||{}),visitedEdges=new Set(history.flatMap(r=>(r.edges||[]).map(e=>e.join('>'))));
  for(const e of data.record?.edges||[])visitedEdges.add(e.join('>'));
@@ -64,8 +64,8 @@ function selectWorldStop(id){
  if(traveling||committed||!networkPlan.active.some(e=>e.to===id))return;
  selected=id;const n=networkPlan.byId[id],t=JOURNEY_STOP_TYPES[n.type],color=worldColor(n.type);
  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.toggle('selected',el.dataset.route===id);if(el.matches('.route-card'))el.setAttribute('aria-pressed',String(el.dataset.route===id));});
- $('.route-overlay').classList.add('has-selection');$('#routeActionLabel').textContent=worldStopName(n);$('#setOff').disabled=false;$('#setOff').style.background=color;$('#setOffText').textContent='Travel here';
- $('.note-label').textContent=t.label.toUpperCase();$('.note-label').style.color=color;$('#routeNote').style.borderColor=color;$('#routeNote p').textContent=n.type==='road'?worldBenefit(n.type,n):t.description;
+ $('.route-overlay').classList.add('has-selection');$('#routeActionLabel').textContent=worldStopName(n);const cost=networkPlan.active.find(e=>e.to===id)?.cost||0,affordable=networkData.record?.hop===id||!Number.isFinite(networkData.money)||networkData.money>=cost;$('#setOff').disabled=!affordable;$('#setOff').style.background=color;$('#setOffText').textContent=affordable?'Travel here':'Need $'+cost;
+ $('.note-label').textContent=t.label.toUpperCase();$('.note-label').style.color=color;$('#routeNote').style.borderColor=color;$('#routeNote p').textContent=n.type==='road'||cost?worldBenefit(n.type,n):t.description;
  $('#travelStatus').textContent=worldBenefit(n.type,n);
 }
 function requestWorldJourney(d){
