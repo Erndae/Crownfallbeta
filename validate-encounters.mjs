@@ -99,3 +99,10 @@ console.log('PASS: '+count+' authored land/circuit stops cover all scene types; 
  c.calm=true;await vm.runInContext('animateMove(56,57,"normal",roadside)',c);assert.equal(calls.length,2);
 }
 console.log('PASS: shared match movement/capture animation, ordered patrol reply, turn input lock, atomic saves, cancelled navigation, and reduced motion.');
+
+{
+ const h=setup(fixture(0));h.action('fight');const e=h.c.RUN.journeyPreview1[h.key].encounters['s2-a2'];
+ await h.tap(62);assert.equal(e.selected,62);await h.tap(62);assert.equal(e.selected,null,'Tap selected piece again to deselect, like the main board');
+ await h.tap(4);assert.equal(e.inspected,4,'Enemy pieces can be inspected');assert.equal(e.selected,null);assert.equal(e.moves,0);
+}
+console.log('PASS: patrol selection toggles and enemy inspection match main-board interaction without spending moves.');

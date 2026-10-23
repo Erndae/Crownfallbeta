@@ -124,14 +124,15 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];
     if(worldSkirmishBusy||!event||event.resolved||event.phase!=='skirmish'||!Number.isInteger(square)||square<0||square>63)return;
     const board=event.board.slice(),piece=board[square];
-    if(piece&&piece.side==='me'){worldPieceSound(piece.t,'pick');event.selected=square;event.message='Choose a highlighted square.';save();return worldShowEncounter();}
+    if(piece&&piece.side==='me'){worldPieceSound(piece.t,'pick');event.selected=event.selected===square?null:square;event.inspected=event.selected;event.message=event.selected==null?'Tap a piece, then a target':'Choose a highlighted square.';save();return worldShowEncounter();}
     const from=event.selected;
+    if(piece?.side==='en'&&(from==null||!legalFor(board,from).includes(square))){event.inspected=square;event.selected=null;save();return worldShowEncounter();}
     if(from==null||!board[from]||board[from].side!=='me'||!legalFor(board,from).includes(square)){event.message='Select one of your pieces, then a highlighted square.';return worldShowEncounter();}
     // Keep the saved turn intact until both animations finish. Leaving the scene
     // cancels this preview, so a menu/reload cannot save half of a patrol turn.
     const originalBoard=event.board;
-    let view=typeof document==='undefined'?null:document.getElementById('roadsideBoard');
-    const current=()=>cityRouteRecord()===r&&r.encounter===event.node&&!event.resolved&&event.phase==='skirmish'&&event.board===originalBoard&&(!view||document.getElementById('roadsideBoard')===view);
+    let view=typeof document==='undefined'?null:document.querySelector('#board.patrol-board');
+    const current=()=>cityRouteRecord()===r&&r.encounter===event.node&&!event.resolved&&event.phase==='skirmish'&&event.board===originalBoard&&(!view||document.querySelector('#board.patrol-board')===view);
     const animate=(from,to,style)=>typeof animateMove==='function'?animateMove(from,to,style,view):Promise.resolve();
     worldSkirmishBusy=true;
     try{
@@ -140,13 +141,13 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       if(!current())return;
       board[square]=board[from];board[from]=null;
       if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
-      const next={...event,board,selected:null,moves:(event.moves||0)+1};
+      const next={...event,board,selected:null,inspected:null,lastMove:[from,square],enemyMove:null,moves:(event.moves||0)+1};
       if(victim&&victim.side==='en'&&victim.t==='R'){Object.assign(event,next);return worldSkirmishWin(event);}
       const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
       if(!replies.length){if(inCheck(board,'en')){Object.assign(event,next);return worldSkirmishWin(event);}next.phase='escaped';}
       else{
         journeyRenderEncounter({...next,message:'The patrol is thinking…'},event.place,()=>{},()=>{});
-        view=typeof document==='undefined'?null:document.getElementById('roadsideBoard');
+        view=typeof document==='undefined'?null:document.querySelector('#board.patrol-board');
         if(typeof sleep==='function')await sleep(typeof calm!=='undefined'&&calm?0:180);
         if(!current())return;
         replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);
@@ -155,7 +156,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
         worldPieceSound(mover.t,capture?'capture':'move',true);
         await animate(move.from,move.to,capture?'lunge':dr<0?'retreat':mover.t==='P'?'stomp':'normal');
         if(!current())return;
-        board[move.to]=mover;board[move.from]=null;
+        board[move.to]=mover;board[move.from]=null;next.enemyMove=[move.from,move.to];
         if(mover.t==='P'&&(move.to<8||move.to>=56))board[move.to]={...mover,t:'Q'};
         next.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
         const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
