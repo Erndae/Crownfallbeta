@@ -137,3 +137,5 @@ body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-l
 @media(max-width:800px){.path-actions{padding-top:9px;gap:7px}.path-action-label{font-size:15px}.path-actions .set-off{min-height:46px;font-size:16px}.path-actions .travel-status{font-size:11px;line-height:1.4}.network-toolbar>span{max-width:230px}}
 
 .cartographic-map .network-node .stop-hit{fill:transparent!important;stroke:none!important;filter:none!important;pointer-events:all}
+
+.journey-arrival-note{margin:0 0 14px;padding:12px 14px;border-left:3px solid #c8b47e;background:#1c2c30;color:#d4dbd1;font:13px/1.5 var(--body,'DM Sans',sans-serif)}

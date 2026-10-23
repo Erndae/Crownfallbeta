@@ -46,10 +46,19 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
    if(['safer','risky'].includes(n.type))effect=n.type;
    assert.equal(h.c.RUN.money,expectedMoney);assert.equal(h.c.RUN.journeyPreview1[key].position,id);
    const after=JSON.stringify(h.c.RUN);h.send({type:'journey-arrive',key,node:id});assert.equal(JSON.stringify(h.c.RUN),after);
-   const event=h.c.RUN.journeyPreview1[key].encounters[id];assert(event&&!event.resolved,'Every arrival must pause for an encounter');assert.equal(h.posts.at(-1).type,'journey-encounter');
-   h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.posts.at(-1).type,'journey-encounter');assert.equal(h.c.RUN.money,expectedMoney);
-   if(event.kind!=='ambush'){h.c.stopAction('listen');assert.equal(h.c.stopEvent.phase,'story');}
-   h.c.stopAction(event.kind==='ambush'?'retreat':'continue');assert(h.c.RUN.journeyPreview1[key].encounters[id].resolved);
+   const event=h.c.RUN.journeyPreview1[key].encounters[id];assert(event,'Every arrival records its outcome');
+   if(['quiet','cache','shelter','market','battle'].includes(event.kind)){
+    assert(event.resolved,'Stops without a decision skip the arrival screen');
+    assert.equal(h.posts.at(-1).type,['market','battle'].includes(event.kind)?'journey-enter':'journey-request');
+    assert.equal(h.c.RUN.journeyPreview1[key].notice.node,id);assert(h.c.RUN.journeyPreview1[key].notice.text);
+    h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.c.RUN.money,expectedMoney);
+    if(event.kind==='market')assert.equal(h.shops(),1);else if(event.kind==='battle')assert.equal(h.fights(),1);else assert.equal(h.posts.at(-1).type,'journey-request');
+   }else{
+    assert(!event.resolved,'Interactive arrivals still pause');assert.equal(h.posts.at(-1).type,'journey-encounter');
+    h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.posts.at(-1).type,'journey-encounter');assert.equal(h.c.RUN.money,expectedMoney);
+    if(event.kind!=='ambush'){h.c.stopAction('listen');assert.equal(h.c.stopEvent.phase,'story');}
+    h.c.stopAction(event.kind==='ambush'?'retreat':'continue');assert(h.c.RUN.journeyPreview1[key].encounters[id].resolved);
+   }
    if(n.type==='supply'){
     assert.equal(h.shops(),1);h=setup(JSON.parse(JSON.stringify(h.c.RUN)));assert.equal(h.shops(),1);assert.equal(h.c.RUN.money,expectedMoney);h.next.onclick();assert(!h.c.RUN.inShop);assert(!h.c.RUN.journeyPreview1[key].atShop);
    }else if(n.type!=='fight'){assert.equal(h.shops(),0);assert.equal(h.fights(),0);}
@@ -61,4 +70,4 @@ for(const land of lands)for(const circuit of circuits)for(const stage of circuit
  }
 }
 assert(degrees.has(1)&&degrees.has(2)&&degrees.has(3)&&degrees.has(4));
-console.log(`PASS: ${tested} complete paths across all 85 stages; ${shopPaths} shop visits and ${cachePaths} cache visits; 1–4 connections; every stop opens and resumes a scene, blocks departure until resolved, rejects replayed arrivals, pays once, and reaches the correct battle.`);
+console.log(`PASS: ${tested} complete paths across all 85 stages; ${shopPaths} shop visits and ${cachePaths} cache visits; 1–4 connections; simple stops stay on the map; shops and battles open directly; interactive scenes resume and block departure; replayed arrivals pay once and reach the correct battle.`);

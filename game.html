@@ -8889,9 +8889,12 @@ function winBlind(){
   // presentation facts, captured before the commit below moves the run on
   const vLand = land(), vRuler = bossWin && bossId() === 'ruler', vName = roundName(RUN.blind), vScore = B.score, vLog = B.log;
   const vOpp = bossWin && !vRuler ? {tier: bossObj(bossId()).mini ? 'rival' : 'boss', name: bossName(bossId())} : null;   // v132
-  const html = (`${bp ? `<div class="quote">${portrait(bp)}<span>“${bp.lose}”<small>${bp.name}</small></span></div>` : ''}${bp ? '' : `<p class="muted">${bossWin ? bossName(bossId()) : roundName(RUN.blind)} beaten</p>`}<h2 style="color:var(--brass)">${B.mate ? (B.kingFell ? 'The King falls!' : 'Checkmate!') : RUN.circuit === 'ruler' ? 'Ruler defeated!' : `Stage ${RUN.ante} cleared!`}</h2>
+  const html = (`<h2 style="color:var(--brass)">${B.mate ? (B.kingFell ? 'The King falls!' : 'Checkmate!') : RUN.circuit === 'ruler' ? 'Ruler defeated!' : `Stage ${RUN.ante} cleared!`}</h2>
+    <div class="win-total"><span>Total reward</span><strong class="money">+$${total}</strong></div>
     <div class="kv"><span>Score</span><b>${B.score.toLocaleString()} / ${B.target.toLocaleString()}</b></div>
-    ${B.mateBonus ? `<div class="kv"><span>Checkmate score bonus</span><b style="color:var(--brass)">+${B.mateBonus.toLocaleString()}</b></div>` : ''}
+    <button class="btn" id="cash">Collect &amp; continue</button>
+    ${RUN.circuit !== 'ruler' && bossWin ? `<p class="stnext">${RUN.ante < CIRCUIT_STAGES ? `Next: Stage ${RUN.ante+1} · ${STAGE_ROLE[RUN.ante]}` : `${CIR().name} conquered`}</p>` : ''}
+    <details class="win-details"><summary>Reward breakdown &amp; battle details</summary>
     <div class="cash">
       <div class="kv"><span>${RUN.circuit === 'ruler' ? 'Ruler reward' : 'Stage reward'}${debtNote ? ` (${C('loanshark').name} took it)` : ''}</span><b class="money">$${reward}</b></div>
       ${blitzOn() ? `<div class="kv"><span>${blitzLeft} moves left ($${B.hustle ? 2 : 1} each)</span><b class="money">$${movesBonus}</b></div>` : `<div class="kv"><span>Moves used</span><b>${B.moveCount != null ? B.moveCount : B.movesStart - B.moves}</b></div>`}
@@ -8902,8 +8905,10 @@ function winBlind(){
       ${chal.cash ? `<div class="kv"><span>Challenge · ${chal.name}${chal.swap ? ' · +1 Swap next round' : ''}</span><b class="money">$${chal.cash}</b></div>` : ''}
       <div class="kv" style="border-top:1px solid var(--line);padding-top:6px"><span>Total</span><b class="money" style="font-size:20px">$${total}</b></div>
     </div>${bossWin && (RUN.cards || []).length >= 2 ? '<p class="handfull">Hand full · no card reward this time</p>' : ''}
-    
-    ${RUN.circuit !== 'ruler' && bossWin ? `<p class="stnext">Stage ${RUN.ante} · ${STAGE_ROLE[RUN.ante - 1] || ''} · ${RUN.ante < CIRCUIT_STAGES ? `next: Stage ${RUN.ante + 1} · ${STAGE_ROLE[RUN.ante]}` : `${CIR().name} conquered`}</p>` : ''}${laWinHtml(laRes)}<button class="btn" id="cash">Collect winnings</button><button class="btn ghost" id="peek">View the board</button>`);
+
+    ${B.mateBonus ? `<div class="kv"><span>Checkmate score bonus</span><b>+${B.mateBonus.toLocaleString()}</b></div>` : ''}
+    ${bp ? `<div class="quote">${portrait(bp)}<span>“${bp.lose}”<small>${bp.name}</small></span></div>` : ''}${laWinHtml(laRes)}
+    </details><button class="btn ghost win-review" id="peek">Review the round</button>`);
   B.done = true;
   if(RUN.gauntlet) return gWin(vScore, vLog, laRes, chal, piggy, blitzLeft, mateBonus);   // v152: Arena Tokens (committed in gWin)
   // commit the win right away, so closing the app or going back never loses it
@@ -8934,7 +8939,7 @@ function winBlind(){
   }
   // presentation → the existing rewards window
   const intro = vRuler && vLand === 'throne' ? Promise.resolve()                       // the Crownless King keeps his own story flow
-    : vRuler ? rulerDefeatIntro(vLand, rulerShort(vLand)) : stageWinIntro(vLand, vScore, vName, vOpp);
+    : vRuler ? rulerDefeatIntro(vLand, rulerShort(vLand)) : Promise.resolve();
   intro.then(() => {
   const m = modal(html, null); m.classList.add('vicm'); addPeek(m, vLog);
   let paid = false;
@@ -9835,6 +9840,15 @@ function shopScrollPosition(){
 function restoreShopScroll(position){
   if(position) window.scrollTo({...position,behavior:'instant'});
 }
+function renderShop(html){
+  const current=app.querySelector('.shopscr:not(.garm)');
+  if(!current){app.innerHTML=html;return;}
+  const template=document.createElement('template');template.innerHTML=html;
+  const next=template.content.querySelector('.shopscr');
+  const before=Array.from(current.children),after=Array.from(next.children);
+  if(before.length!==after.length){current.replaceChildren(...after);return;}
+  after.forEach((section,i)=>{if(section.outerHTML!==before[i].outerHTML)before[i].replaceWith(section);});
+}
 function shop(){
   const shopPosition = shopScrollPosition();
   if(RUN && RUN.land && PACK !== RUN.land) setPack(RUN.land);   // tile names always follow the Land you are in
@@ -9884,7 +9898,7 @@ function shop(){
   };
   const recruitSec = secHTML(groups[1]), sections = groups.filter(g => g.key !== 'recruit').map(secHTML).join('');   // v154: Recruit comes first
   const L = lives(), full = L >= maxLives(), bought = lifeBoughtHere();
-  app.innerHTML = `<section class="screen shopscr">
+  renderShop(`<section class="screen shopscr">
     <div class="shophead">
       <div class="topbar"><button class="btn ghost backbtn" id="sback">‹ Back</button><span class="muted">Saved · ${PACKS.find(x => x.id === land()).name}</span></div>
       <div class="shoptitle"><h2>${RUN.gauntlet ? 'Armory' : UI.shop}</h2><span class="shopcash"><span class="money">$${RUN.money}</span>${hearts(L)}</span></div>
@@ -9900,14 +9914,15 @@ function shop(){
     ${sections}
     <h3 class="ssec" style="--sc:#ff3d5a">Extra lives</h3>
     <div class="offer lifeo wide"><span class="tagline">Extra life · max ${maxLives()}</span><h3><span>Buy a life</span>${hearts(1, true)}</h3><p>A second chance. If you lose a round, you can retry instead of ending your run. <span class="muted">Applies to checkmate, stalemate, Concede, or running out of moves in a Blitz. One purchase per Land; each costs more than the last. You have ${L}.</span></p><button class="btn red" id="buylife" ${cash(lifeCost()) || full || bought ? 'disabled' : ''}>${full ? 'Lives full' : bought ? 'Life purchased this Land' : `$${lifeCost()}`}</button></div>
-    <div class="shopfoot"><button class="btn ghost" id="reroll" ${cash(restockCost()) ? 'disabled' : ''}>${UI.restock === 'Restock' ? 'Restock shop' : UI.restock} · $${restockCost()}</button><button class="btn" id="next">${RUN.gauntlet ? `Wave ${RUN.gWave}` : 'Next round'}</button></div>
-  </section>`;
+    <div class="shopfoot"><span class="shopfoot-balance">Cash <b>$${RUN.money}</b></span><button class="btn ghost" id="reroll" ${cash(restockCost()) ? 'disabled' : ''}>${UI.restock === 'Restock' ? 'Restock shop' : UI.restock} · $${restockCost()}</button><button class="btn" id="next">${RUN.gauntlet ? `Wave ${RUN.gWave}` : 'Leave shop'}</button></div>
+  </section>`);
   bindRelicTips(app, k => { const r = R(RUN.relics[k]); RUN.money += Math.floor(r.cost/2); RUN.relics.splice(k,1); sfx.coin(); save(); shop(); });
   if(RUN.ev && RUN.ev.pend) setTimeout(evShow, 0);   // v139: a pending event comes first
   else setTimeout(forgeResume, 0);   // v138: reopen a Forge step that was open before a refresh
   app.querySelectorAll('[data-buy]').forEach(b => b.onclick = () => {
     const o = RUN.shop[+b.dataset.buy];
-    const cost = offerCost(o);
+    if(!o||o.sold)return;
+    const cost = offerCost(o);if(RUN.money<cost)return;
     if(o.kind === 'relic'){ spend(cost); RUN.relics.push(o.id); }
     else if(o.kind === 'piece'){ if(!betaCan(o.t)) return; spend(cost); recruitAdd(o.e ? `${o.t}:${o.e}` : o.t); if(o.t === 'Q'){ RUN.qBought = (RUN.qBought || 0) + 1; qlog('shop'); } checkSpell(); }
     else if(o.kind === 'forge'){ forgePick(o); return; }
@@ -10243,7 +10258,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       const result=journeyOriginalShop();
       const heading=document.querySelector('.shoptitle h2');
       if(heading){const place=journeyGraph(worldData()).byId[r.position];heading.textContent=place.short;heading.style.textTransform='capitalize';heading.style.fontSize='24px';const district=document.createElement('small');district.textContent=place.district;district.style.cssText='display:block;font:12px/1.4 var(--body, sans-serif);text-transform:none;margin-top:4px';heading.append(district);}
-      const next=$('#next');if(next){next.textContent='Leave shop · choose next stop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
+      const next=$('#next');if(next){next.textContent='Leave shop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
       return result;
     }
     if(!r || r.route !== 'supply' || !r.shopVisited || r.shopLeft || r.arrived){
@@ -10251,7 +10266,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }
     const result = journeyOriginalShop();
     const next = $('#next');
-    if(next){ next.textContent = 'Leave shop · return to the road'; next.onclick = () => {
+    if(next){ next.textContent = 'Leave shop'; next.onclick = () => {
       r.shopLeft = true; RUN.shop = null; RUN.inShop = false; save(); blindSelect();
     }; }
     return result;
@@ -10272,7 +10287,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(r.encounter && !r.encounters?.[r.encounter]?.resolved)return worldShowEncounter();
     if(!r.hop){
       if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
-      r.hop=d.node;save();
+      r.notice=null;r.hop=d.node;save();
     }
     journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
   }
@@ -10297,8 +10312,15 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(r.encounters[node.id].resolved)return worldProceed(node);
     r.encounter=node.id;save();return worldShowEncounter();
   }
+  function worldPassStop(event){
+    const r=cityRouteRecord();event.resolved=true;r.encounter=null;
+    const benefit={cache:'$3 collected. ',shelter:'Next fight target −20%. ',market:'$5 supplies collected. '}[event.kind]||'';
+    r.notice={node:event.node,name:event.place.name,text:benefit+event.text};save();
+    return worldProceed(event.place);
+  }
   function worldShowEncounter(){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    if(['quiet','cache','shelter','market','battle'].includes(event.kind))return worldPassStop(event);
     journeyPending=journeyKey();RUN.inShop=false;save();sceneMusic(event.phase==='skirmish'?'battle':'land');
     journeyPost('journey-encounter',{...worldData(),key:journeyPending,networkVersion:r.networkVersion,place:event.place});
     const id=event.node,valid=()=>cityRouteRecord()===r&&r.encounter===id&&!event.resolved;

@@ -41,7 +41,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       const result=journeyOriginalShop();
       const heading=document.querySelector('.shoptitle h2');
       if(heading){const place=journeyGraph(worldData()).byId[r.position];heading.textContent=place.short;heading.style.textTransform='capitalize';heading.style.fontSize='24px';const district=document.createElement('small');district.textContent=place.district;district.style.cssText='display:block;font:12px/1.4 var(--body, sans-serif);text-transform:none;margin-top:4px';heading.append(district);}
-      const next=$('#next');if(next){next.textContent='Leave shop · choose next stop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
+      const next=$('#next');if(next){next.textContent='Leave shop';next.onclick=()=>{r.atShop=false;RUN.shop=null;RUN.inShop=false;save();blindSelect();};}
       return result;
     }
     if(!r || r.route !== 'supply' || !r.shopVisited || r.shopLeft || r.arrived){
@@ -49,7 +49,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     }
     const result = journeyOriginalShop();
     const next = $('#next');
-    if(next){ next.textContent = 'Leave shop · return to the road'; next.onclick = () => {
+    if(next){ next.textContent = 'Leave shop'; next.onclick = () => {
       r.shopLeft = true; RUN.shop = null; RUN.inShop = false; save(); blindSelect();
     }; }
     return result;
@@ -70,7 +70,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(r.encounter && !r.encounters?.[r.encounter]?.resolved)return worldShowEncounter();
     if(!r.hop){
       if(!g.active.some(e=>e.to===d.node))return journeyPost('journey-error',{message:'Choose a connected, reachable location.'});
-      r.hop=d.node;save();
+      r.notice=null;r.hop=d.node;save();
     }
     journeyPost('journey-committed',{key:journeyPending,node:r.hop,networkVersion:2});
   }
@@ -95,8 +95,15 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     if(r.encounters[node.id].resolved)return worldProceed(node);
     r.encounter=node.id;save();return worldShowEncounter();
   }
+  function worldPassStop(event){
+    const r=cityRouteRecord();event.resolved=true;r.encounter=null;
+    const benefit={cache:'$3 collected. ',shelter:'Next fight target −20%. ',market:'$5 supplies collected. '}[event.kind]||'';
+    r.notice={node:event.node,name:event.place.name,text:benefit+event.text};save();
+    return worldProceed(event.place);
+  }
   function worldShowEncounter(){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
+    if(['quiet','cache','shelter','market','battle'].includes(event.kind))return worldPassStop(event);
     journeyPending=journeyKey();RUN.inShop=false;save();sceneMusic(event.phase==='skirmish'?'battle':'land');
     journeyPost('journey-encounter',{...worldData(),key:journeyPending,networkVersion:r.networkVersion,place:event.place});
     const id=event.node,valid=()=>cityRouteRecord()===r&&r.encounter===id&&!event.resolved;

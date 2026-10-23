@@ -78,6 +78,7 @@ function requestWorldJourney(d){
  const strip=$('.stage-strip');strip.replaceChildren();
  const places=journeyPlaces(d.land,d.circuitId);places.forEach((place,i)=>{const stage=document.createElement('div');stage.className='stage'+(i+1===networkPlan.current?' current':i+1<networkPlan.current?' done':'');const num=document.createElement('span');num.innerHTML=journeyStopLogo(i===places.length-1?'boss':'fight');const label=document.createElement('b');label.textContent=place;label.title=place;stage.append(num,label);strip.append(stage);});
  if(d.record?.hop){selectWorldStop(d.record.hop);committed=true;$('#setOffText').textContent='Continue saved journey';$('#travelStatus').textContent='Destination locked · resume where you left off';}
+ const notice=$('#journeyArrivalNote');if(notice){notice.hidden=!d.record?.notice;notice.textContent=d.record?.notice?d.record.notice.name+' · '+d.record.notice.text:'';}
  // Keep repeated hops at the map; the primary action remains fixed on phones.
  $('.journey-summary').scrollIntoView({behavior:'instant',block:'start'});
 }
