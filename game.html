@@ -2,6 +2,7 @@
 <html lang="en">
 <head>
 <script src="beta-storage.js"></script>
+<script src="piece-designs.js"></script>
 <script src="character-style.js"></script>
 <link rel="stylesheet" href="character-style.css">
 <script src="journey-world.js"></script>
@@ -2456,7 +2457,7 @@ function pieceSVG(t, side, e){
   const me = side !== 'en';
   const el = eList(e);
   const mat = el.length ? MAT[['crystal','iron','gold','fire','thorn'].find(x => el.includes(x))] : null;
-  const fill = mat ? mat.fill : me ? (t==='K'?CrownfallCharacter.palette().fill:'var(--mef,#ffe14d)') : 'var(--enf,#161616)';
+  const fill = me ? CrownfallCharacter.palette().fill : mat ? mat.fill : 'var(--enf,#161616)';
   const stroke = mat ? mat.stroke : me ? 'var(--mes,#111)' : 'var(--enemy,#ff3d9a)';
   let back = '', front = '';
   if(el.includes('fire')) back += '<g class="flame"><path d="M8 34 Q5 22 11 15 Q11 21 14 22 Q13 12 20 4 Q21 13 26 15 Q27 10 29 9 Q35 20 32 34 Z" fill="#ff5a1f" opacity=".9"/><path d="M12 34 Q10 26 14 21 Q15 25 17 25 Q17 17 21 12 Q23 19 26 21 Q30 27 28 34 Z" fill="#ffd23d"/></g>';
@@ -2465,7 +2466,7 @@ function pieceSVG(t, side, e){
   if(el.includes('iron')) front += '<g fill="#1b2230"><circle cx="12.5" cy="33" r="1.1"/><circle cx="20" cy="33" r="1.1"/><circle cx="27.5" cy="33" r="1.1"/></g><path d="M13 27 H27" stroke="#1b2230" stroke-width="1.4" stroke-dasharray="2 1.6"/>';
   if(el.includes('gold')) front += '<g><circle cx="32.5" cy="8" r="5.6" fill="#ffd23d" stroke="#4a2a00" stroke-width="1.5"/><text x="32.5" y="11.1" text-anchor="middle" font-size="8.5" font-weight="900" font-family="Arial Black,Arial" fill="#4a2a00">$</text></g>';
   const glow = el.length ? ` style="filter:var(--pcf) drop-shadow(0 0 3px ${ENCH[el[0]].col})"` : '';
-  return `<svg class="pc ${me?'me':'en'}${el.length ? ' ench' : ''}"${glow} viewBox="0 0 40 40" aria-hidden="true">${back}<g style="fill:${fill};stroke:${stroke}" stroke-width="2.1" stroke-linejoin="round">${(t==='K'&&me?CrownfallCharacter.shape():SHAPE[t]).replace('class="cut"', `style="stroke:${stroke};fill:none"`).replace('class="eye"', `style="fill:${stroke};stroke:none"`)}<rect x="9" y="30.5" width="22" height="5" rx="2"/></g>${t==='K'&&me?CrownfallCharacter.crest():''}${front}</svg>`;
+  return `<svg class="pc ${me?'me':'en'}${el.length ? ' ench' : ''}"${glow} viewBox="0 0 40 40" aria-hidden="true">${back}${CrownfallCharacter.art(t,side,undefined,{fill,stroke})}${front}</svg>`;
 }
 
 /* ---------- special pieces ---------- */
@@ -2782,6 +2783,19 @@ const sfx = {
   check:() => kit.siren(),
   ambush:() => { kit.horn(0, 0.22); kit.horn(0.26, 0.22); kit.horn(0.52, 0.5); kit.kick(0); kit.kick(0.26); kit.kick(0.52); },
 };
+// Recognizable, short piece voices, unlocked by the selecting touch on mobile.
+function pieceSound(type,action='move',enemy=false,at=0){
+ if(!soundOn)return;
+ const voices={P:[360,0.065],N:[260,0.09],B:[780,0.14],R:[145,0.13],Q:[660,0.18],K:[220,0.18]};
+ const [base,dur]=voices[type]||voices.P,f=base*(enemy?0.84:1),pick=action==='pick',capture=action==='capture',vol=pick?0.075:0.19;
+ tone({f:pick?f*1.5:f,f2:pick?f*1.7:f*0.65,type:type==='B'||type==='Q'?'sine':'triangle',dur:pick?0.065:dur,vol,at});
+ if(!pick){
+  noise({type:'bandpass',f:type==='R'?420:1200,q:2,dur:0.045,vol:0.1,at});
+  if(type==='N')tone({f:f*0.8,f2:f*0.5,dur:0.07,vol:0.15,at:at+0.075});
+  if(type==='Q'||type==='K')tone({f:f*1.5,dur:dur*0.8,vol:0.08,at:at+0.04});
+  if(capture){noise({type:'lowpass',f:1600,dur:0.14,vol:0.22,at:at+0.025});tone({f:110,f2:45,dur:0.16,vol:0.2,at:at+0.025});}
+ }
+}
 const T = ms => calm ? 30 : fast ? ms*0.45 : ms;
 
 /* ---------- board packs ---------- */
@@ -6802,7 +6816,7 @@ async function tapSquare(i){
   }
   if(!busy && mateNow()) return;                                            // v156
   if(sel !== null && legalMoves(sel).includes(i)){ pieceInfo(null); await doMove(sel, i); return; }
-  if(p && p.side === 'me'){ sel = sel === i ? null : i; sel === null ? sfx.tick() : sfx.pick(); drawBoard(); pieceInfo(sel === null ? null : p);
+  if(p && p.side === 'me'){ sel = sel === i ? null : i; sel === null ? sfx.tick() : pieceSound(p.t,'pick'); drawBoard(); pieceInfo(sel === null ? null : p);
     if(sel !== null && p.e) $('#hand').innerHTML = `${eNames(p.e)} ${TYPE[p.t].name}`;
     return; }
   if(p && p.side === 'en'){ sfx.enemyTap(); sel = null; drawBoard(); pieceInfo(p); $('#hand').textContent = 'Tap a piece, then a target'; return; }
@@ -7103,7 +7117,7 @@ async function doMove(from, to, pt){
   drawBoard();
   if(res && res.check){ pop(kingIdx(B.board,'en'), 'Check!', 'fxx'); sfx.check(); }
   if(res){
-    if(victim){ sfx.cap(); B.caps++; }
+    if(victim){ pieceSound(mover.t,'capture'); B.caps++; }
     await playScore(res, to);
     if(victim && victim.t !== 'K' && Math.random() < 0.45) setTimeout(() => say('hurt'), 250);
     if(victim) coach('brilliance');
@@ -7131,7 +7145,7 @@ async function doMove(from, to, pt){
     }
     try{ laMyMove(mover, victim, from, to, laCk, laThr, !!(res && res.check)); }catch(e){}
   } else {
-    sfx.move(); B.streak = 0; showCombo(); try{ laMyMove(mover, null, from, to, laCk, laThr, false); }catch(e){}
+    pieceSound(mover.t); B.streak = 0; showCombo(); try{ laMyMove(mover, null, from, to, laCk, laThr, false); }catch(e){}
     if(RULE('tax')){ RUN.money = Math.max(0, RUN.money - 1); pop(to, '-$1', 'fxm'); }
     $('#hand').textContent = 'Quiet move';
   }
@@ -10005,8 +10019,9 @@ function cityOpening(fresh=false){
     ['Your first allies.','The Safehouse door opens. A small crew has been waiting for someone willing to challenge Vex. They offer you a place at their practice board.','Your road: learn the moves, build your army, conquer Crown City’s four circuits, then face its ruler. Every stop ahead has a story, supplies, or a fight.','Meet the crew · learn to fight']
   ];
   const c=chapters[step],at=places[step];
-  app.innerHTML=`<section class="screen city-prologue"><div class="city-kicker">CROWN CITY · CHAPTER 0</div><div class="opening-top"><h2>Your journey begins.</h2><button class="city-text-button" id="openingMenu">Menu</button></div><div class="opening-map"><svg viewBox="0 0 400 330" role="img" aria-label="Crown City street map. You are at ${at[2]}. The route leads from South Gate through Night Market to the Safehouse."><defs><pattern id="openingBlocks" width="80" height="70" patternUnits="userSpaceOnUse"><rect x="8" y="8" width="54" height="42" rx="4" fill="#293b42" stroke="#405059"/><path d="M18 20h25M18 30h15" stroke="#617079" opacity=".5"/></pattern></defs><rect width="400" height="330" fill="#14262e"/><rect width="400" height="330" fill="url(#openingBlocks)"/><path d="M-10 305Q160 285 220 325T430 295" fill="none" stroke="#267280" stroke-width="29"/><path d="M65 260V210H125V175H205V125H285V80H335" fill="none" stroke="#0c161e" stroke-width="26"/><path id="openingRoad" d="M65 260V210H125V175H205V125H285V80H335" fill="none" stroke="#dfb979" stroke-width="3" stroke-dasharray="6 5"/>${places.map(([x,y,name],i)=>`<circle cx="${x}" cy="${y}" r="20" fill="${i<=step?'#e8bf7e':'#16242b'}" stroke="#e8bf7e" stroke-width="3"/><g transform="translate(${x} ${y}) scale(.6)" style="color:${i<=step?'#14262e':'#e8bf7e'}">${journeyStopLogo(['entry','supply','safehouse'][i],true)}</g><text x="${x}" y="${y+35}" text-anchor="middle" fill="#fff4df" font-size="13" font-family="sans-serif" font-weight="700" paint-order="stroke" stroke="#14262e" stroke-width="5">${name}</text>`).join('')}<text x="25" y="37" fill="#b4c9ce" font-size="12" letter-spacing="3">DOWNTOWN</text><text x="300" y="250" fill="#81979f" font-size="11">VEX TOWER</text><path d="M330 230v-63h22v63m-17-63v-17h12v17" fill="#37434b" stroke="#af758e" stroke-width="2"/><g id="openingTraveler" transform="translate(${at[0]} ${at[1]})"><circle r="25" fill="none" stroke="#ff3b9a" stroke-width="4"/></g></svg><div class="opening-location">YOU ARE HERE · ${at[2]}</div></div><div class="opening-story" aria-live="polite"><h3>${c[0]}</h3><p>${c[1]}</p><p>${c[2]}</p></div><button class="btn" id="openingWalk">${c[3]}</button><div class="city-kicker opening-progress">${step+1} / 3 · Follow the gold street · Pink ring = you</div></section>`;
+  app.innerHTML=`<section class="screen city-prologue"><div class="city-kicker">CROWN CITY · CHAPTER 0</div><div class="opening-top"><h2>Your journey begins.</h2><button class="city-text-button" id="openingMenu">Menu</button></div><button class="city-text-button opening-skip" id="openingSkip">Skip introduction</button><div class="opening-map"><svg viewBox="0 0 400 330" role="img" aria-label="Crown City street map. You are at ${at[2]}. The route leads from South Gate through Night Market to the Safehouse."><defs><pattern id="openingBlocks" width="80" height="70" patternUnits="userSpaceOnUse"><rect x="8" y="8" width="54" height="42" rx="4" fill="#293b42" stroke="#405059"/><path d="M18 20h25M18 30h15" stroke="#617079" opacity=".5"/></pattern></defs><rect width="400" height="330" fill="#14262e"/><rect width="400" height="330" fill="url(#openingBlocks)"/><path d="M-10 305Q160 285 220 325T430 295" fill="none" stroke="#267280" stroke-width="29"/><path d="M65 260V210H125V175H205V125H285V80H335" fill="none" stroke="#0c161e" stroke-width="26"/><path id="openingRoad" d="M65 260V210H125V175H205V125H285V80H335" fill="none" stroke="#dfb979" stroke-width="3" stroke-dasharray="6 5"/>${places.map(([x,y,name],i)=>`<circle cx="${x}" cy="${y}" r="20" fill="${i<=step?'#e8bf7e':'#16242b'}" stroke="#e8bf7e" stroke-width="3"/><g transform="translate(${x} ${y}) scale(.6)" style="color:${i<=step?'#14262e':'#e8bf7e'}">${journeyStopLogo(['entry','supply','safehouse'][i],true)}</g><text x="${x}" y="${y+35}" text-anchor="middle" fill="#fff4df" font-size="13" font-family="sans-serif" font-weight="700" paint-order="stroke" stroke="#14262e" stroke-width="5">${name}</text>`).join('')}<text x="25" y="37" fill="#b4c9ce" font-size="12" letter-spacing="3">DOWNTOWN</text><text x="300" y="250" fill="#81979f" font-size="11">VEX TOWER</text><path d="M330 230v-63h22v63m-17-63v-17h12v17" fill="#37434b" stroke="#af758e" stroke-width="2"/><g id="openingTraveler" transform="translate(${at[0]} ${at[1]})"><circle r="25" fill="none" stroke="#ff3b9a" stroke-width="4"/></g></svg><div class="opening-location">YOU ARE HERE · ${at[2]}</div></div><div class="opening-story" aria-live="polite"><h3>${c[0]}</h3><p>${c[1]}</p><p>${c[2]}</p></div><button class="btn" id="openingWalk">${c[3]}</button><div class="city-kicker opening-progress">${step+1} / 3 · Follow the gold street · Pink ring = you</div></section>`;
   $('#openingMenu').onclick=title;
+  $('#openingSkip').onclick=()=>cityFinishTraining(true);
   $('#openingWalk').onclick=()=>{
     if(step===2){cityOpeningSave(2,'tutorial');return cityWelcome();}
     const button=$('#openingWalk');button.disabled=true;button.textContent='Walking…';
@@ -10022,7 +10037,7 @@ function cityOpening(fresh=false){
 function cityWelcome(){
   cityEndTraining(); leaveBoard(); onTitle=false; setPack('street'); setLandBg(null); sceneMusic('menu');
   app.innerHTML=`<section class="screen city-welcome"><div class="city-kicker">Crown City · The Safehouse</div><div class="welcome-king">${pieceSVG('K','me')}</div><h2>Everybody wants<br>a crown.<br><span>Yours starts here.</span></h2><p>Your new crew offers a practice fight before you challenge Vex. Learn to move, capture, and score, then assemble your army.</p><button class="city-text-button" id="cityCustomize">Customize your King</button><div class="welcome-actions"><button class="btn" id="cityTrain">Play tutorial fight</button><button class="btn ghost" id="citySkip">Skip tutorial · build my army</button><button class="city-text-button" id="cityBack">Back to city map</button></div></section>`;
-  $('#cityCustomize').onclick=()=>CrownfallCharacter.open();
+  $('#cityCustomize').onclick=()=>CrownfallCharacter.open('character');
   $('#cityTrain').onclick=cityTraining;
   $('#citySkip').onclick=()=>cityFinishTraining(true);
   $('#cityBack').onclick=()=>{cityOpeningSave(2);cityOpening();};
@@ -10090,9 +10105,9 @@ function journeyRenderEncounter(event,node,onAction,onSquare){
  if(bonus)content+='<div class="stop-benefit">'+esc(bonus)+'</div>';
  if(battle){
   const board=event.board,selected=event.selected,moves=selected==null?[]:legalFor(board,selected),coord=i=>'abcdefgh'[i%8]+(8-Math.floor(i/8));
-  content='<div class="stop-kicker">SURPRISE SKIRMISH · '+esc(node.name)+'</div><h1>Clear the road.</h1><p class="stop-story">Capture the enemy Rook to win $2. Tap your piece, then a highlighted square. Your Campaign army and lives are safe.</p><div class="stop-battle-status" aria-live="polite">'+esc(event.message||'Your move.')+' · '+(6-(event.moves||0))+' moves left</div><div class="boardArea"><div class="boardWrap"><div class="board" id="roadsideBoard" aria-label="Roadside skirmish chessboard">';
+  content='<div class="stop-kicker">SURPRISE SKIRMISH · '+esc(node.name)+'</div><h1>Clear the road.</h1><p class="stop-story">Capture the patrol’s Rook or deliver checkmate to win $2. Protect your King: the patrol plans its replies. Your Campaign army and lives are safe.</p><div class="stop-battle-status" aria-live="polite">'+esc(event.message||'Your move.')+' · '+((event.limit||6)-(event.moves||0))+' moves left</div><div class="boardArea"><div class="boardWrap"><div class="board" id="roadsideBoard" aria-label="Roadside skirmish chessboard">';
   content+=board.map((q,i)=>'<button class="sq '+((Math.floor(i/8)+i%8)%2?'d':'l')+(selected===i?' sel':'')+(moves.includes(i)?' stop-legal':'')+'" data-stop-square="'+i+'" aria-label="'+coord(i)+(q?', '+(q.side==='me'?'your ':'enemy ')+TYPE[q.t].name:'')+'">'+(q?pieceSVG(q.t,q.side):'')+(moves.includes(i)?'<span class="ring"></span>':'')+'<span class="coord">'+coord(i)+'</span></button>').join('');
-  content+='</div></div></div>'+button('stopRetreat','Slip away · continue',true);
+  content+='</div></div></div>'+button('stopSound','Sound: '+(soundOn?'On':'Off'),true)+button('stopRetreat','Slip away · continue',true);
  }else if(won||lost){
   content+='<div class="stop-result" role="status">'+(won?'The patrol retreats. $2 added to your purse.':'Your company finds a way around the patrol and regroups. Your army and lives are safe.')+'</div>'+button('stopContinue','Continue journey');
  }else if(event.kind==='ambush'){
@@ -10105,6 +10120,7 @@ function journeyRenderEncounter(event,node,onAction,onSquare){
  app.innerHTML='<section class="screen roadside-encounter">'+content+'</section>';
  const actions={'#stopFight':'fight','#stopRetreat':'retreat','#stopListen':'listen','#stopContinue':'continue'};
  for(const [selector,action]of Object.entries(actions)){const button=app.querySelector(selector);if(button)button.onclick=()=>onAction(action);}
+ const soundButton=app.querySelector('#stopSound');if(soundButton)soundButton.onclick=()=>{soundOn=!soundOn;try{localStorage.setItem('gambit-sound',soundOn?'on':'off');}catch(e){}if(soundOn)pieceSound('N','move');soundButton.textContent='Sound: '+(soundOn?'On':'Off');};
  app.querySelectorAll('[data-stop-square]').forEach(button=>button.onclick=()=>onSquare(Number(button.dataset.stopSquare)));
  if(!battle)window.scrollTo(0,0);
 }
@@ -10242,7 +10258,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
     if(action==='listen'&&event.phase==='intro'&&event.kind!=='ambush'){event.phase='story';save();return worldShowEncounter();}
     if(action==='fight'&&event.kind==='ambush'&&event.phase==='intro'){
-      event.phase='skirmish';event.board=journeySkirmishBoard(event.variant);event.moves=0;event.selected=null;save();return worldShowEncounter();
+      event.phase='skirmish';event.patrolVersion=2;event.limit=10;event.board=journeySkirmishBoard(event.variant,2);event.moves=0;event.selected=null;save();return worldShowEncounter();
     }
     if(action==='retreat'&&event.kind==='ambush'){
       event.phase='escaped';event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
@@ -10251,6 +10267,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
       event.resolved=true;r.encounter=null;save();return worldProceed(event.place);
     }
   }
+  function worldPieceSound(...args){try{pieceSound(...args);}catch(e){}}
   function worldSkirmishWin(event){
     event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=2;}save();return worldShowEncounter();
   }
@@ -10258,19 +10275,20 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];
     if(!event||event.resolved||event.phase!=='skirmish'||!Number.isInteger(square)||square<0||square>63)return;
     const board=event.board,piece=board[square];
-    if(piece&&piece.side==='me'){event.selected=square;event.message='Choose a highlighted square.';save();return worldShowEncounter();}
+    if(piece&&piece.side==='me'){worldPieceSound(piece.t,'pick');event.selected=square;event.message='Choose a highlighted square.';save();return worldShowEncounter();}
     const from=event.selected;
     if(from==null||!board[from]||board[from].side!=='me'||!legalFor(board,from).includes(square)){event.message='Select one of your pieces, then a highlighted square.';return worldShowEncounter();}
-    const victim=board[square];board[square]=board[from];board[from]=null;event.selected=null;event.moves++;
+    const victim=board[square];worldPieceSound(board[from].t,victim?'capture':'move');board[square]=board[from];board[from]=null;event.selected=null;event.moves++;
+    if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
     if(victim&&victim.side==='en'&&victim.t==='R')return worldSkirmishWin(event);
     const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
     if(!replies.length){if(inCheck(board,'en'))return worldSkirmishWin(event);event.phase='escaped';}
     else{
-      replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);const move=replies[0];board[move.to]=board[move.from];board[move.from]=null;
+      replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);const move=event.patrolVersion===2?journeyPatrolReply(board,legalFor,inCheck):replies[0];worldPieceSound(board[move.from].t,board[move.to]?'capture':'move',true,0.18);board[move.to]=board[move.from];board[move.from]=null;
       if(board[move.to].t==='P'&&(move.to<8||move.to>=56))board[move.to]={...board[move.to],t:'Q'};
       event.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
       const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
-      if(!canMove||event.moves>=6)event.phase='escaped';
+      if(!canMove||event.moves>=(event.limit||6))event.phase='escaped';
     }
     save();return worldShowEncounter();
   }

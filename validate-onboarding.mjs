@@ -16,10 +16,18 @@ function harness(){
 }
 let h=harness();vm.runInContext('startNewGame()',h.ctx);assert.match(h.app.innerHTML,/Walk to Night Market/);h.node('#openingWalk').onclick();assert.match(h.app.innerHTML,/Whispers at the market/);vm.runInContext('cityOpening()',h.ctx);assert.match(h.app.innerHTML,/Whispers at the market/);h.node('#openingWalk').onclick();assert.match(h.app.innerHTML,/Your first allies/);h.node('#openingWalk').onclick();assert.match(h.app.innerHTML,/Play tutorial fight/);assert.match(h.app.innerHTML,/Skip tutorial/);
 h.node('#citySkip').onclick();assert.equal(h.drafts(),1);assert(h.marks.includes('damage'));
+for(let step=0;step<3;step++){
+ const skip=harness();vm.runInContext('cityOpeningSave('+step+');cityOpening()',skip.ctx);
+ assert.match(skip.app.innerHTML,/id="openingSkip">Skip introduction/);
+ skip.node('#openingSkip').onclick();assert.equal(skip.drafts(),1);assert.equal(skip.timers.size,0);
+ assert.equal(vm.runInContext('cityOpeningState().phase',skip.ctx),'done');
+ assert.deepEqual(skip.run,{money:19,roster:['K','P']});
+ vm.runInContext('cityOpeningSave(0);cityOpening()',skip.ctx);skip.ctx.window.matchMedia=()=>({matches:false});skip.node('#openingWalk').onclick();assert.equal(skip.timers.size,1);skip.node('#openingSkip').onclick();assert.equal(skip.timers.size,0,'Skip cancels movement');
+}
 h=harness();vm.runInContext('cityTraining()',h.ctx);
 h.node('sq57').onclick();h.node('sq42').onclick();assert.match(h.app.innerHTML,/160/);assert.equal(h.timers.size,1);
 [...h.timers.values()][0]();h.node('sq56').onclick();h.node('sq32').onclick();assert.match(h.app.innerHTML,/Training won/);assert.match(h.app.innerHTML,/>260</);
 h.node('#trainingDone').onclick();assert.equal(h.drafts(),1);assert.deepEqual(h.marks,['score','brilliance']);assert.deepEqual(h.run,{money:19,roster:['K','P']});assert.deepEqual(h.battle,{score:25});
 h=harness();vm.runInContext('cityTraining()',h.ctx);h.node('sq57').onclick();h.node('sq42').onclick();const pending=[...h.timers.values()][0];vm.runInContext('title()',h.ctx);h.app.innerHTML='menu';pending();assert.equal(h.app.innerHTML,'menu');
 const index=readFileSync('index.html','utf8');assert.match(index,/body class="game-open"/);assert(!index.includes('id="gameShell" hidden'));
-console.log('PASS: map movement first, saved story stops, tutorial skip/completion, legal training captures and scoring, save preservation, and timer cancellation.');
+console.log('PASS: map movement first, saved story stops, all three introduction skips, movement cancellation, tutorial skip/completion, legal training captures and scoring, save preservation, and timer cancellation.');

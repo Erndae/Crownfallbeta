@@ -22,7 +22,36 @@ function journeyEventFor(data,node){
  const text=kind==='battle'?'Your army reaches '+node.name+'. '+(node.boss?'The guards fall back toward their ruler.':'The road opens onto a defended position.')+' Take a moment to prepare before the next confrontation.':Array.isArray(scene[kind])?scene[kind][hash%scene[kind].length]:scene[kind];
  return {node:node.id,kind,title:titles[kind],text,story:(JOURNEY_DISTRICT_STORIES[land]||JOURNEY_DISTRICT_STORIES.street)[data.circuitId]||'',phase:'intro',resolved:false,variant:hash%3};
 }
-function journeySkirmishBoard(variant){
+function journeySkirmishBoard(variant,version=1){
  const setups=[[[60,'K','me'],[56,'R','me'],[57,'N','me'],[4,'K','en'],[42,'R','en'],[24,'P','en']],[[60,'K','me'],[58,'B','me'],[62,'N','me'],[4,'K','en'],[40,'R','en'],[15,'P','en']],[[60,'K','me'],[56,'R','me'],[62,'N','me'],[4,'K','en'],[16,'R','en'],[23,'P','en']]];
- const board=Array(64).fill(null);for(const [i,t,side]of setups[variant%3])board[i]={t,side};return board;
+ const patrols=[
+ [[62,'K','me'],[56,'R','me'],[42,'N','me'],[34,'B','me'],[51,'P','me'],[54,'P','me'],[4,'K','en'],[7,'R','en'],[21,'N','en'],[18,'B','en'],[11,'P','en'],[30,'P','en']],
+ [[57,'K','me'],[63,'R','me'],[45,'N','me'],[37,'B','me'],[52,'P','me'],[49,'P','me'],[3,'K','en'],[0,'R','en'],[18,'N','en'],[21,'B','en'],[12,'P','en'],[25,'P','en']],
+ [[62,'K','me'],[56,'R','me'],[42,'N','me'],[34,'B','me'],[49,'P','me'],[51,'P','me'],[54,'P','me'],[4,'K','en'],[7,'R','en'],[21,'N','en'],[18,'B','en'],[11,'P','en'],[30,'P','en']]
+ ];
+ const board=Array(64).fill(null);for(const [i,t,side]of (version===2?patrols:setups)[variant%3])board[i]={t,side};return board;
+}
+
+// Two-ply patrol: evaluate each reply against the player's strongest counter.
+// Pure board copies keep search separate from the saved encounter and Campaign army.
+function journeyPatrolReply(board,legal,check){
+ const weights={K:0,Q:900,R:550,B:330,N:320,P:100};
+ const moves=(b,side)=>b.flatMap((p,from)=>p&&p.side===side?legal(b,from).filter(to=>b[to]?.t!=='K').map(to=>({from,to})):[]);
+ const apply=(b,m)=>{const n=b.slice();n[m.to]={...n[m.from]};n[m.from]=null;if(n[m.to].t==='P'&&(m.to<8||m.to>=56))n[m.to].t='Q';return n;};
+ const value=b=>{
+  if(!b.some(p=>p?.side==='en'&&p.t==='R'))return -100000;
+  let score=0;
+  b.forEach((p,i)=>{if(!p)return;const center=7-Math.abs(3.5-i%8)-Math.abs(3.5-Math.floor(i/8));score+=(p.side==='en'?1:-1)*(weights[p.t]+(p.t==='K'?0:center*3));});
+  if(check(b,'me'))score+=28;if(check(b,'en'))score-=28;return score;
+ };
+ let best=null,bestScore=-Infinity;
+ for(const move of moves(board,'en')){
+  const next=apply(board,move),counters=moves(next,'me');
+  let score=counters.length?Infinity:check(next,'me')?100000:0;
+  for(const counter of counters){const after=apply(next,counter);let v=value(after);if(check(after,'en')&&!moves(after,'en').length)v=-100000;score=Math.min(score,v);}
+  // Prefer a purposeful developing move when minimax scores tie.
+  score+=value(next)*0.001;
+  if(score>bestScore){bestScore=score;best=move;}
+ }
+ return best;
 }
