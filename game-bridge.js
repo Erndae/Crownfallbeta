@@ -100,7 +100,7 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
     journeyPending=journeyKey();RUN.inShop=false;save();sceneMusic(event.phase==='skirmish'?'battle':'land');
     journeyPost('journey-encounter',{...worldData(),key:journeyPending,networkVersion:r.networkVersion,place:event.place});
     const id=event.node,valid=()=>cityRouteRecord()===r&&r.encounter===id&&!event.resolved;
-    return journeyRenderEncounter(event,event.place,action=>{if(valid())worldEncounterAction(action);},square=>{if(valid())worldSkirmishTap(square);});
+    return journeyRenderEncounter(event,event.place,action=>{if(valid())worldEncounterAction(action);},square=>{if(valid())return worldSkirmishTap(square);});
   }
   function worldEncounterAction(action){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];if(!event||event.resolved)return;
@@ -119,27 +119,52 @@ if (window.parent !== window && new URLSearchParams(location.search).get('journe
   function worldSkirmishWin(event){
     event.phase='won';event.selected=null;if(!event.rewardPaid){event.rewardPaid=true;RUN.money+=2;}save();return worldShowEncounter();
   }
-  function worldSkirmishTap(square){
+  let worldSkirmishBusy = false;
+  async function worldSkirmishTap(square){
     const r=cityRouteRecord(),event=r&&r.encounters?.[r.encounter];
-    if(!event||event.resolved||event.phase!=='skirmish'||!Number.isInteger(square)||square<0||square>63)return;
-    const board=event.board,piece=board[square];
+    if(worldSkirmishBusy||!event||event.resolved||event.phase!=='skirmish'||!Number.isInteger(square)||square<0||square>63)return;
+    const board=event.board.slice(),piece=board[square];
     if(piece&&piece.side==='me'){worldPieceSound(piece.t,'pick');event.selected=square;event.message='Choose a highlighted square.';save();return worldShowEncounter();}
     const from=event.selected;
     if(from==null||!board[from]||board[from].side!=='me'||!legalFor(board,from).includes(square)){event.message='Select one of your pieces, then a highlighted square.';return worldShowEncounter();}
-    const victim=board[square];worldPieceSound(board[from].t,victim?'capture':'move');board[square]=board[from];board[from]=null;event.selected=null;event.moves++;
-    if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
-    if(victim&&victim.side==='en'&&victim.t==='R')return worldSkirmishWin(event);
-    const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
-    if(!replies.length){if(inCheck(board,'en'))return worldSkirmishWin(event);event.phase='escaped';}
-    else{
-      replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);const move=event.patrolVersion===2?journeyPatrolReply(board,legalFor,inCheck):replies[0];worldPieceSound(board[move.from].t,board[move.to]?'capture':'move',true,0.18);board[move.to]=board[move.from];board[move.from]=null;
-      if(board[move.to].t==='P'&&(move.to<8||move.to>=56))board[move.to]={...board[move.to],t:'Q'};
-      event.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
-      const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
-      if(!canMove||event.moves>=(event.limit||6))event.phase='escaped';
-    }
-    save();return worldShowEncounter();
+    // Keep the saved turn intact until both animations finish. Leaving the scene
+    // cancels this preview, so a menu/reload cannot save half of a patrol turn.
+    const originalBoard=event.board;
+    let view=typeof document==='undefined'?null:document.getElementById('roadsideBoard');
+    const current=()=>cityRouteRecord()===r&&r.encounter===event.node&&!event.resolved&&event.phase==='skirmish'&&event.board===originalBoard&&(!view||document.getElementById('roadsideBoard')===view);
+    const animate=(from,to,style)=>typeof animateMove==='function'?animateMove(from,to,style,view):Promise.resolve();
+    worldSkirmishBusy=true;
+    try{
+      const victim=board[square];worldPieceSound(board[from].t,victim?'capture':'move');
+      await animate(from,square,victim?'lunge':'normal');
+      if(!current())return;
+      board[square]=board[from];board[from]=null;
+      if(board[square].t==='P'&&(square<8||square>=56))board[square]={...board[square],t:'Q'};
+      const next={...event,board,selected:null,moves:(event.moves||0)+1};
+      if(victim&&victim.side==='en'&&victim.t==='R'){Object.assign(event,next);return worldSkirmishWin(event);}
+      const replies=[];board.forEach((p,i)=>{if(p&&p.side==='en')for(const to of legalFor(board,i)){const v=board[to];replies.push({from:i,to,score:v?(TYPE[v.t]?.val||1):0});}});
+      if(!replies.length){if(inCheck(board,'en')){Object.assign(event,next);return worldSkirmishWin(event);}next.phase='escaped';}
+      else{
+        journeyRenderEncounter({...next,message:'The patrol is thinking…'},event.place,()=>{},()=>{});
+        view=typeof document==='undefined'?null:document.getElementById('roadsideBoard');
+        if(typeof sleep==='function')await sleep(typeof calm!=='undefined'&&calm?0:180);
+        if(!current())return;
+        replies.sort((a,b)=>b.score-a.score||a.from-b.from||a.to-b.to);
+        const move=event.patrolVersion===2?journeyPatrolReply(board,legalFor,inCheck):replies[0];
+        const mover=board[move.from],capture=board[move.to],dr=Math.floor(move.to/8)-Math.floor(move.from/8);
+        worldPieceSound(mover.t,capture?'capture':'move',true);
+        await animate(move.from,move.to,capture?'lunge':dr<0?'retreat':mover.t==='P'?'stomp':'normal');
+        if(!current())return;
+        board[move.to]=mover;board[move.from]=null;
+        if(mover.t==='P'&&(move.to<8||move.to>=56))board[move.to]={...mover,t:'Q'};
+        next.message=inCheck(board,'me')?'Your King is in check. Find a safe move.':'The patrol responds. Your move.';
+        const canMove=board.some((p,i)=>p&&p.side==='me'&&legalFor(board,i).length);
+        if(!canMove||next.moves>=(event.limit||6))next.phase='escaped';
+      }
+      Object.assign(event,next);save();return worldShowEncounter();
+    }finally{worldSkirmishBusy=false;}
   }
+
   function worldProceed(node){
     const r=cityRouteRecord();
     if(r.networkVersion!==2)return legacyArrive(journeyKey());

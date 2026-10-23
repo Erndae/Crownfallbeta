@@ -12,6 +12,6 @@ for(const t of 'PNBRQK'){
 }
 assert.equal(new Set(voices).size,6,'Each chess piece has a distinct move voice');
 ctx.soundOn=false;notes=[];vm.runInContext("pieceSound('N','capture')",ctx);assert.equal(notes.length,0,'Mute remains respected');
-assert(bridge.includes("worldPieceSound(piece.t,'pick')"));assert(bridge.includes("victim?'capture':'move'"));assert(bridge.includes('true,0.18'));assert(ui.includes("localStorage.setItem('gambit-sound'"));
+assert(bridge.includes("worldPieceSound(piece.t,'pick')"));assert(bridge.includes("victim?'capture':'move'"));assert(bridge.includes("worldPieceSound(mover.t,capture?'capture':'move',true)"));assert(ui.includes("localStorage.setItem('gambit-sound'"));
 assert(game.includes("pieceSound(mover.t,'capture')")&&game.includes("pieceSound(p.t,'pick')"));
 console.log('PASS: six distinct piece voices, selection/move/capture cues, separated enemy reply audio, saved mute toggle, and main-board/roadside sound wiring.');
