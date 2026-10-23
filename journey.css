@@ -123,3 +123,17 @@ body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-l
 
 /* The title sequence owns the screen until the city map is ready. */
 .game-shell.intro-open .game-toolbar{display:none}.game-shell.intro-open #gameFrame{height:100dvh}
+
+/* Readable landmarks, quiet context roads, and one player token. */
+.cartographic-map .atlas-city-grid{opacity:.6}.cartographic-map .atlas-city-building{opacity:.88}.cartographic-map .atlas-landmarks .atlas-city-building{opacity:1}
+.cartographic-map .atlas-roads{opacity:.82}.cartographic-map .network-link{stroke:#bdc9bc;stroke-opacity:.15;stroke-width:2;stroke-dasharray:none}.cartographic-map .network-edge.visited .network-link{stroke-opacity:.4}
+.cartographic-map .route-track .route-glow{opacity:0}.cartographic-map .route-track .route-line{stroke-width:4;opacity:.5;stroke-dasharray:7 12}.cartographic-map .route-track.selected .route-line{stroke-width:7;opacity:1;stroke-dasharray:none;filter:drop-shadow(0 0 5px currentColor)}
+.cartographic-map .network-node .stop-ring{stroke-width:2;fill:#152630}.cartographic-map .network-node.reachable .stop-ring{stroke-width:3;filter:none}.cartographic-map .network-node.selected .stop-ring{stroke-width:4;fill:#293d43}
+.cartographic-map .node-logo .stop-logo{width:38px;height:38px;x:-19px;y:-19px}.cartographic-map .network-node.current-stop>.stop-ring,.cartographic-map .network-node.current-stop>.node-logo{display:none}
+.cartographic-map .player-marker{fill:#182b34;stroke:#efca84;stroke-width:3}.cartographic-map #traveler{pointer-events:none}.cartographic-map #traveler .king-piece{filter:none}
+.cartographic-map .node-label{font:600 25px var(--body);letter-spacing:0;stroke-width:5;paint-order:stroke;stroke-linejoin:round}.cartographic-map .node-detail{font:400 20px var(--body);stroke-width:4;opacity:.85}.cartographic-map .current-stop .node-label{fill:#f0d8a4}
+.cartographic-map .network-node.context-stop{opacity:.45}.cartographic-map .atlas-district-labels{opacity:.48}
+.path-action-label{font-family:var(--body);font-weight:600}.path-actions .set-off{font-family:var(--body);text-transform:none;letter-spacing:.2px}
+@media(max-width:800px){.path-actions{padding-top:9px;gap:7px}.path-action-label{font-size:15px}.path-actions .set-off{min-height:46px;font-size:16px}.path-actions .travel-status{font-size:11px;line-height:1.4}.network-toolbar>span{max-width:230px}}
+
+.cartographic-map .network-node .stop-hit{fill:transparent!important;stroke:none!important;filter:none!important;pointer-events:all}

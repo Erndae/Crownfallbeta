@@ -60,7 +60,7 @@ function createJourneyAtlasTheme(c){
   if(land==='street'){
    // Side streets, rail lines and blocks establish a dense urban district around the route.
    const grid=group(parent,'atlas-city-grid');
-   for(let x=100;x<g.width;x+=270){path(grid,`M${x} 75V965`,'none','#111d2b',18);path(grid,`M${x-12} 75V965M${x+12} 75V965`,'none','#5c657044',2);}
+   for(let x=115;x<g.width;x+=350){path(grid,`M${x} 75V965`,'none','#172a34',14);path(grid,`M${x-12} 75V965M${x+12} 75V965`,'none','#61717a25',2);}
    for(const y of[105,882,950])path(grid,`M0 ${y}H${g.width}`,'none','#172432',18);
    path(grid,`M0 916H${g.width}M0 928H${g.width}`,'none','#8a9291',2);
    for(let x=0;x<g.width;x+=28)path(grid,`M${x} 911V933`,'none','#697777',2);
@@ -87,10 +87,11 @@ function createJourneyAtlasTheme(c){
  }
  function parcel(parent,x,y,w,h,r){
   if(land==='street'){
-   if(r<.1){rect(parent,x,y,w,h,'#315244','#608478',4);tree(parent,x+w/2,y+h/2,.8);return;}
-   const tall=data.circuitId==='rooftop'||r>.68;
-   if(w>60&&r<.6){cityBuilding(parent,x,y,w*.45,h,tall,data.circuitId==='midnight'||r>.4);cityBuilding(parent,x+w*.53,y+3,w*.47,h-3,tall,r>.3);}
-   else cityBuilding(parent,x,y,w,h,tall,data.circuitId==='midnight'||r>.72);
+   if(r<.19){const lot=group(parent,'atlas-pocket-park',x,y);rect(lot,0,0,w,h,'#29483f','#476257',8);path(lot,`M8 ${h-10}L${w-10} 10`,'none','#819180',5);tree(lot,19,18,.8);tree(lot,w-20,h-20,.7);rect(lot,w/2-8,h/2+8,17,4,'#aa9770','none',1);return;}
+   const tall=data.circuitId==='rooftop'||r>.79,neon=data.circuitId==='midnight'||r>.85;
+   if(r<.4){cityBuilding(parent,x,y,w,h,tall,neon);rect(parent,x+18,y+15,w-36,h-30,'#283f45','#83908a',2);tree(parent,x+w/2,y+h/2,.6);}
+   else if(r<.65){cityBuilding(parent,x,y,w*.66,h,tall,neon);cityBuilding(parent,x+w*.7,y+h*.43,w*.3,h*.57,false,false);path(parent,`M${x+w*.78} ${y+4}V${y+h*.35}`,'none','#b5b4a0',3);}
+   else cityBuilding(parent,x,y,w,h,tall,neon);
   }else if(land==='medieval'){
    if(r<.42){for(let k=0;k<3;k++)tree(parent,x+12+(k%2)*29,y+12+Math.floor(k/2)*29,.8);return;}
    const t=group(parent,'atlas-timber-houses',x,y);rect(t,3,6,w,h,'#2b343188','none');rect(t,0,0,w,h,'#918466','#4a463e',1);path(t,`M-4 ${h/2}L${w/2} -8L${w+4} ${h/2}L${w/2} ${h+7}Z`,r>.72?'#625c68':'#885b48','#baa47d',1);path(t,`M${w/2}-5V${h+4}`,'none','#d1b387',2);rect(t,w*.7,3,9,16,'#595b53','#a29c81',0);
@@ -111,7 +112,7 @@ function createJourneyAtlasTheme(c){
    if(land==='fantasy'){
     path(parent,d,'none','#101526',27);path(parent,d,'none','#887eac',17);path(parent,d,'none','#c7b9e2',2,{'stroke-dasharray':'3 16'});
    }else{
-    path(parent,d,'none',p.pave,land==='street'?65:54);path(parent,d,'none',p.road,land==='street'?47:39);
+    path(parent,d,'none',p.pave,land==='street'?48:54);path(parent,d,'none',p.road,land==='street'?33:39);
     path(parent,d,'none',land==='street'?'#b9bfae':p.edge,land==='medieval'?26:1.5,{'stroke-dasharray':land==='medieval'?'2 10':land==='greek'?'3 12':'10 16','stroke-opacity':land==='medieval'?.22:.38});
    }
   }
@@ -134,13 +135,47 @@ function createJourneyAtlasTheme(c){
    else{const t=group(parent,'atlas-arcane-spire',0,-105);path(t,'M-30 39L-25-36 0-79 25-36 30 39Z','#5c607c','#b9a6d7',2);path(t,'M-38-33L0-90 38-33Z',battle?'#b19abf':'#669ca7','#ded0ed',2);path(t,'M0-84V38','none','#d1c0e7',2);for(const x of[-15,15])rect(t,x-4,-17,8,25,'#b8dedd','#6e9ab8',3);if(market){path(t,'M-60 40L-42 8-20 40M20 40L42 8 60 40','#b58fa7','#edd0d5',2);}}
    return;
   }
-  circle(parent,0,0,battle?75:57,p.pave,p.edge,2);circle(parent,0,0,battle?65:47,p.lot,p.edge,1);
+  circle(parent,0,-38,battle?53:41,p.pave,p.edge,1);circle(parent,0,-38,battle?46:35,p.lot,'none',1);
   if(land==='street'){
-   if(safe){rect(parent,-65,-150,130,90,'#304e46','#6c897a',8);tree(parent,-36,-116,.9);tree(parent,35,-115,.9);path(parent,'M-52-80H52','none','#b09c83',8);}
-   else if(type==='cache'){cityBuilding(parent,-67,-135,134,68,false,false);for(let i=0;i<3;i++)rect(parent,-48+i*35,-87,27,27,'#aa9674','#d3c29f',1);}
-   else if(type==='road'){circle(parent,0,-106,30,'#485864','#859ba6',3);circle(parent,0,-106,18,'#335b6a','#96c1c5',2);}
-   else if(/station|landing|yard|dock/i.test(n.name)&&battle&&!n.boss){cityBuilding(parent,-86,-149,172,81,false,true);for(let i=0;i<3;i++)path(parent,`M-86 ${-161-i*8}H86`,'none','#9eadaf',2);rect(parent,-47,-123,94,22,'#313e50','#caac77',0);add(parent,'text',{x:0,y:-107,'text-anchor':'middle',fill:'#f0d4a3','font-size':13,'letter-spacing':3},'TRANSIT');}
-   else{const tall=n.boss||data.circuitId==='rooftop';cityBuilding(parent,tall?-55:-66,tall?-175:-143,tall?110:132,tall?119:78,tall,market||data.circuitId==='midnight'||n.boss);if(market){for(let k=0;k<8;k++)rect(parent,-66+k*16.5,-78,16.5,21,k%2?'#e5c08b':'#9f596f','none',0);add(parent,'text',{x:0,y:-98,'text-anchor':'middle',fill:'#f2d5a7','font-size':14,'letter-spacing':3},'MARKET');}if(n.boss){path(parent,'M-18-176L-25-195-7-188 0-202 7-188 25-195 18-176Z','#d89d76','#efd3ac',2);}}
+   const name=(n.name||'').toLowerCase();
+   if(type==='risky'){
+    const t=group(parent,'atlas-city-overpass',0,-64);
+    path(t,'M-111 30H113','none','#07131c99',53);for(const x of[-81,80]){rect(t,x-7,-38,14,84,'#485b62','#8b9997',2);}
+    path(t,'M-109 0H109','none','#849391',48);path(t,'M-109 0H109','none','#243843',34);path(t,'M-108-20H108M-108 20H108','none','#c2bda0',2);
+    path(t,'M-105 0H105','none','#c8bd94',2,{'stroke-dasharray':'11 12'});for(const x of[-98,98])for(let k=0;k<4;k++)path(t,`M${x-7+k*4}-17L${x+2+k*4}-8`,'none','#d88ca2',2);
+   }else if(safe){
+    rect(parent,-78,-160,156,119,'#2e5046','#657d6d',9);path(parent,'M-59-60V-137H56M-59-102H52','none','#88977e',9);
+    for(const [x,y] of[[-48,-129],[47,-125],[38,-75]])tree(parent,x,y,1.05);rect(parent,-15,-124,30,6,'#bd9c72','none',1);rect(parent,-28,-67,40,6,'#bd9c72','none',1);path(parent,'M-78-49H-17M17-49H78','none','#b5b298',4);
+   }else if(type==='cache'){
+    cityBuilding(parent,-82,-146,130,73,false,false);path(parent,'M-76-135H42M-76-117H42M-76-99H42','none','#a6a78d',2);
+    for(const [x,y] of[[48,-128],[48,-97],[15,-64],[-17,-64]]){rect(parent,x,y,27,25,'#a38a63','#d4bb86',1);path(parent,`M${x+3} ${y+3}L${x+24} ${y+22}M${x+24} ${y+3}L${x+3} ${y+22}`,'none','#5e614f',2);}
+   }else if(type==='road'){
+    circle(parent,0,-72,47,'#74847a','#a1aea0',2);circle(parent,0,-72,31,'#355d66','#9cb9b4',3);circle(parent,0,-72,9,'#a6c4b9','#d8d4b0',2);for(const x of[-57,57])tree(parent,x,-78,.7);
+   }else if(market){
+    cityBuilding(parent,-82,-160,164,64,false,true);rect(parent,-74,-86,148,25,'#93785b','#c5aa7b',1);
+    for(let k=0;k<5;k++){const x=-75+k*32;path(parent,`M${x}-93L${x+3}-110H${x+26}L${x+29}-93Z`,k%2?'#b86982':'#cfb17c','#e2caa0',1);rect(parent,x+2,-91,25,19,'#654e44','#bea17d',1);for(let j=0;j<3;j++)circle(parent,x+7+j*7,-81,2.5,k%2?'#bdb478':'#b87565');}
+    path(parent,'M-86-155Q0-122 86-155','none','#d9be8b',1);for(let k=0;k<7;k++)circle(parent,-75+k*25,-147+Math.sin(k/6*Math.PI)*14,2.5,'#f6d5a3');
+   }else if(battle&&!n.boss&&/station/.test(name)){
+    const t=group(parent,'atlas-city-station',0,-120);
+    for(const y of[-33,26]){rect(t,-109,y,218,17,'#a3aa9b','#d5cdb0',1);path(t,`M-108 ${y+7}H108`,'none','#536871',2);}
+    for(const y of[-13,9]){path(t,`M-117 ${y}H117`,'none','#8da09e',2);for(let x=-104;x<112;x+=17)path(t,`M${x} ${y-3}V${y+3}`,'none','#a9a68e',1);}
+    rect(t,-92,-9,118,14,'#a6b9b4','#d4d4be',3);for(let x=-83;x<20;x+=18)rect(t,x,-6,11,5,'#334e5a','none',1);
+    rect(t,-68,-45,136,26,'#546c75','#aab5ad',2);for(let x=-57;x<60;x+=21)rect(t,x,-41,14,17,'#719298','#d2ccb3',1);
+    rect(t,-49,47,98,29,'#6b7a78','#c4bd9f',2);path(t,'M-53 47L0 28 53 47Z','#a68c6c','#d8c7a0',2);
+   }else if(battle&&!n.boss&&data.circuitId==='harbor'){
+    rect(parent,-105,-170,210,122,p.water,'#69878d',6);for(const x of[-74,-10,55]){rect(parent,x,-150,20,119,'#8b8d78','#c5b99a',1);for(let y=-140;y<-45;y+=18)path(parent,`M${x+2} ${y}H${x+18}`,'none','#565f5a',1);}
+    path(parent,'M-99-92Q-83-102-68-92M19-115Q35-124 50-115','none','#7fa3a9',2);path(parent,'M-41-134V-181H41L14-153','none','#b3a882',4);rect(parent,-61,-112,38,24,'#a87669','#c1a892',1);
+   }else if(n.boss){
+    cityBuilding(parent,-55,-208,110,153,true,true);rect(parent,-37,-192,74,50,'#283e4a','#9ba99a',2);path(parent,'M-23-174H23M0-192V-150','none','#d2b77a',3);
+    path(parent,'M-18-210L-25-232-7-225 0-242 7-225 25-232 18-210Z','#d88b92','#efd3ac',2);
+   }else if(data.circuitId==='rooftop'){
+    cityBuilding(parent,-82,-174,164,114,true,true);circle(parent,-37,-131,22,'#987c62','#c9b38e',3);path(parent,'M-56-112V-91M-18-112V-91','none','#b2aa8f',3);
+    rect(parent,27,-148,36,29,'#273c49','#94a29c',2);path(parent,'M-90-77H-48M48-77H90M-90-78V-45M90-78V-45','none','#c68b9d',4);
+   }else if(data.circuitId==='midnight'){
+    cityBuilding(parent,-76,-158,152,98,false,true);path(parent,'M-50-141H50M-50-126H16','none','#d67aab',4);for(const x of[-44,0,44])rect(parent,x-12,-99,24,34,'#1c3541','#68b2bd',2);
+   }else{
+    cityBuilding(parent,-85,-154,60,108,false,false);cityBuilding(parent,25,-143,60,97,true,false);path(parent,'M0-151V-55','none','#b09a703b',18);rect(parent,-5,-139,10,12,'#e7bf7f','none',1);path(parent,'M-21-94H-47M21-82H47','none','#bb8f93',3);
+   }
   }else if(land==='medieval'){
    if(bridge){path(parent,'M-83-99Q-31-153 10-108T84-109','none','#4c8490',29);path(parent,'M-49-114H49M-49-100H49','none','#c0bba1',7);for(const x of[-43,43])rect(parent,x-5,-130,10,48,'#879184','#c9c4a4',1);}
    else if(safe){for(const x of[-42,0,42])tree(parent,x,-105,1.15,'medieval');path(parent,'M-26-73L0-118 27-73Z','#a99c75','#d4bc8d',2);}
@@ -163,5 +198,5 @@ function createJourneyAtlasTheme(c){
    else{ruin(parent,0,-113,n.boss?165:132,n.boss?98:79);for(const x of[-57,57])path(parent,`M${x-13}-73L${x-10}-159L${x+2}-183L${x+11}-157L${x+13}-73Z`,'#4a414f','#a18980',2);if(n.boss){path(parent,'M-20-132V-156H20V-132M-30-132H30L21-107H-21Z','#ab806b','#e7bc85',3);}}
   }
  }
- return {terrain,parcel,roads,site,step:land==='street'?94:112};
+ return {terrain,parcel,roads,site,step:land==='street'?130:112};
 }
