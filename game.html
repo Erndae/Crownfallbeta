@@ -10,13 +10,14 @@
 <meta name="theme-color" content="#1c1c1e">
 <meta name="description" content="Crownfall: a street-style chess roguelike.">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Crownfall">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="Crownfall">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="manifest" href="manifest.webmanifest?v=4">
-<link rel="apple-touch-icon" href="cf-touch-180.png">
-<link rel="icon" type="image/png" sizes="32x32" href="cf-favicon-32.png">
-<link rel="icon" type="image/png" sizes="192x192" href="cf-icon-192.png">
+<link rel="manifest" href="manifest.webmanifest?v=5">
+<link rel="apple-touch-icon" sizes="180x180" href="cf-touch-180.png?v=5">
+<link rel="icon" type="image/png" sizes="32x32" href="cf-favicon-32.png?v=5">
+<link rel="icon" type="image/png" sizes="192x192" href="cf-icon-192.png?v=5">
 <style>html,body{margin:0;background:#1c1c1e}:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);box-sizing:border-box;height:100%}img{max-width:100%}[hidden]{display:none!important}</style>
 <title>Crownfall</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -2395,6 +2396,7 @@ body[data-pack="gauntlet"] .pblind .sigchip{display:none}
 
 <link rel="stylesheet" href="city-board.css">
 <link rel="stylesheet" href="game-clarity.css">
+<link rel="stylesheet" href="opening-intro.css">
 <div id="app"></div>
 <div id="rotateOv" aria-live="polite"><i aria-hidden="true">📱</i><b>Rotate your phone</b><span>Crownfall battles are designed for portrait play.</span></div>
 
@@ -9905,34 +9907,29 @@ document.addEventListener('error', e => {
   img.alt = ''; img.classList.add('img-fail');
 }, true);
 document.addEventListener('pointerdown', e => { const b = e.target.closest('button'); if(b && !b.disabled) sfx.ui(); }, true);
-// Splash: soft cream light behind the (transparent) canonical logo.
-const SP_BURST = 'data:image/webp;base64,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';
+/* A brief city title sequence. Startup and saved-game routing run underneath. */
 (function splash(){
-  // Same single startup splash as before; only the presentation changed. Game boots underneath as it always has.
-  const sp = document.createElement('div'); sp.id = 'splash';
-  // Abstract hairline cracks drifting in toward the centre (stop well short of the logo).
-  const cracks = ['M0 18 L9 24 L14 22 L22 31 L27 30 L33 40', 'M100 8 L91 16 L86 15 L80 26 L74 28 L69 38',
-    'M0 150 L8 144 L13 146 L19 136 L25 134 L31 124', 'M100 176 L93 168 L88 170 L83 158 L77 156 L72 146',
-    'M38 0 L40 9 L37 14 L42 22', 'M64 200 L61 190 L65 184 L60 175', 'M100 96 L92 99 L88 95 L81 101',
-    'M0 88 L7 92 L11 89 L17 96', 'M22 31 L18 40 L20 46', 'M80 26 L84 36', 'M19 136 L14 128'];
-  const hot = [0, 3, 5];
-  sp.innerHTML = `<div class="sp-bg"></div>
-    <svg class="sp-cracks" viewBox="0 0 100 200" preserveAspectRatio="xMidYMid slice" aria-hidden="true">
-      ${cracks.map(d => `<path class="c" d="${d}"/>`).join('')}${hot.map(i => `<path class="h" d="${cracks[i]}"/>`).join('')}</svg>
-    <div class="sp-grain"></div><div class="sp-vig"></div>
-    <div class="sp-mid"><div class="sp-logo"><span class="sp-burst" style="-webkit-mask-image:url(${SP_BURST});mask-image:url(${SP_BURST})"></span><img class="brandimg" src="${LOGO}" alt="Crownfall" width="869" height="423"><span class="sp-pulse"></span></div>
-      <div class="sp-txt">Entering the Lands</div><div class="sp-dots"><i></i><i></i><i></i></div></div>`;
+  const sp=document.createElement('div');sp.id='splash';sp.className='city-title-intro';
+  sp.setAttribute('role','dialog');sp.setAttribute('aria-modal','true');sp.setAttribute('aria-label','Crownfall opening');sp.tabIndex=-1;
+  sp.innerHTML=`<div class="intro-city" aria-hidden="true"></div><div class="intro-shade" aria-hidden="true"></div>
+    <div class="intro-topline"><span>A CROWN IS NEVER GIVEN.</span><button id="introSkip" type="button">Skip intro</button></div>
+    <div class="intro-title"><p class="intro-eyebrow">THE STREETS ARE WAITING</p><div class="intro-poster"><span class="intro-poster-tag" aria-hidden="true">CLAIM YOUR CROWN</span><img class="brandimg" src="${LOGO}" alt="Crownfall" width="869" height="423"><span class="intro-poster-rule" aria-hidden="true"></span></div><p class="intro-tagline">Make your first move.</p></div>
+    <div class="intro-road" aria-hidden="true"><svg viewBox="0 0 320 100"><path class="intro-road-base" d="M0 80H65V50H160V20H255V50H320"/><path class="intro-road-light" d="M0 80H65V50H160V20H255V50H320" pathLength="1"/><circle cx="160" cy="20" r="6"/><circle cx="160" cy="20" r="13" class="intro-road-ring"/></svg></div>
+    <div class="intro-footer"><span>CROWN CITY</span><span class="intro-loading" role="status">Entering the city<span aria-hidden="true">…</span></span></div>`;
   document.body.appendChild(sp);
-  let gone = false;
-  const close = () => { if(gone) return; gone = true; sp.classList.add('done');
-    setTimeout(() => { sp.classList.add('out'); setTimeout(() => sp.remove(), 650); }, calm ? 0 : 280); };
-  sp.addEventListener('pointerdown', close);
-  // Leave as soon as BOTH the entrance has played and the page has actually finished loading (no padded wait).
-  const entrance = new Promise(r => setTimeout(r, calm ? 250 : 1450));
-  const loaded = new Promise(r => document.readyState === 'complete' ? r() : window.addEventListener('load', r, { once: true }));
-  const fonts = document.fonts && document.fonts.ready ? document.fonts.ready.catch(() => {}) : Promise.resolve();
-  Promise.all([entrance, loaded, fonts]).then(close);
-  setTimeout(close, 6000); // safety net: never hold the player on the splash
+  const notify=active=>{if(window.parent!==window)window.parent.postMessage({type:'crownfall-intro',active},location.origin);};
+  notify(true);sp.focus({preventScroll:true});
+  let gone=false;
+  const key=e=>{if(['Enter','Escape',' '].includes(e.key)){e.preventDefault();close();}else if(e.key==='Tab'){e.preventDefault();sp.querySelector('button').focus();}};
+  const close=()=>{
+    if(gone)return;gone=true;document.removeEventListener('keydown',key,true);sp.classList.add('out');sp.style.pointerEvents='none';
+    setTimeout(()=>{const needsFocus=sp.contains(document.activeElement);sp.remove();notify(false);if(needsFocus){const next=document.querySelector('#openingWalk, #play, #cont, #new');next?.focus({preventScroll:true});}},calm?0:450);
+  };
+  document.addEventListener('keydown',key,true);sp.addEventListener('pointerdown',close);sp.querySelector('button').onclick=close;
+  const entrance=new Promise(r=>setTimeout(r,calm?450:2200));
+  const loaded=new Promise(r=>document.readyState==='complete'?r():window.addEventListener('load',r,{once:true}));
+  Promise.all([entrance,loaded]).then(close);
+  setTimeout(close,6000);
 })();
 /* One Campaign arrival, one clear decision. Optional preparation stays available. */
 function cityBattleBriefing(boss){

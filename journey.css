@@ -120,3 +120,6 @@ body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-l
 .stop-logo{display:inline-block;vertical-align:middle;flex:none;overflow:visible;pointer-events:none}.node-logo{pointer-events:none}.stop-visited{pointer-events:none}.node-logo .stop-logo{color:inherit}
 .stop-legend{display:flex;flex-wrap:wrap;gap:9px 16px;margin:18px 0 0;padding:12px 0;border-block:1px solid #59625c70;color:#d8d8c9;font-size:12px}.stop-legend>span{display:inline-flex;align-items:center;gap:6px}.stop-legend .stop-logo{width:23px;height:23px;color:var(--amber,#e6be7e)}
 .route-card-top .stop-logo{width:25px;height:25px;margin-right:7px}.stage .stop-logo{width:24px;height:24px}
+
+/* The title sequence owns the screen until the city map is ready. */
+.game-shell.intro-open .game-toolbar{display:none}.game-shell.intro-open #gameFrame{height:100dvh}
