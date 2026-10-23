@@ -5478,7 +5478,7 @@ function coach(key){
 // one concept per event: after a card closes, the next one waits for the player to act (a move or a new screen)
 function coachReady(){ coachCool = false; setTimeout(coachNext, 350); }
 function coachNext(){
-  if(document.querySelector('.roadside-encounter'))return;
+  if(document.querySelector('.roadside-encounter, .battle-briefing'))return;
   if(coachOn || !coachQ.length || coachCool) return;
   if(busy || document.querySelector('.modal, .vict, .ending, .landintro') || document.getElementById('splash')){ setTimeout(coachNext, 500); return; }
   coachQ.sort((x, y) => COACH[y].pri - COACH[x].pri);
@@ -5626,6 +5626,7 @@ function blindSelect(){
   RUN.inShop = false; B = null; roadStart(); save();
   const t = targetFor;
   const boss = bossObj(bossAt(RUN.ante));
+  if(MODE==='campaign' && !RUN.gauntlet && !MATCH)return cityBattleBriefing(boss);
   app.innerHTML = `<section class="screen">
     <div class="topbar"><button class="btn ghost backbtn" id="bback">‹ Back</button><span class="muted" style="display:flex;align-items:center;gap:8px">${PACKS.find(x => x.id === land()).name}<button class="loremark" id="loremark" aria-label="A strange symbol">${brokenCrownSVG()}</button></span></div>
     <div style="display:flex;justify-content:space-between;align-items:center"><h2 style="font-size:24px">${rulerRoad() ? `The Ruler’s Road<small class="stname">Final battle</small>` : `Stage ${RUN.ante}<small class="stname">${stageName(RUN.ante)}</small>`}<small class="circname" style="--cc:${CIR().col}">${(csDef(land(), RUN.circuit) || {}).ic ? `<i class="cic">${csDef(land(), RUN.circuit).ic}&#xFE0E;</i>` : ''}${CIR().name}</small>${cpDef(land(), RUN.circuit) ? `<button class="cptrait" id="cptrait">${cpDef(land(), RUN.circuit).tr}</button>` : ''}</h2><span style="text-align:right"><span class="money" style="font-size:24px">$${RUN.money}</span><br>${hearts(lives())}</span></div>
@@ -8512,6 +8513,7 @@ const LA_JOIN = {
 const laJoinLine = ch => { const L = LA_JOIN[ch.p] || LA_JOIN.V; let h = 0; for(const c of String(ch.id)) h = (h * 31 + c.charCodeAt(0)) >>> 0; return L[h % L.length]; };
 // a new recruit, introduced once (after the purchase, off the board); a refresh still shows anyone not introduced yet
 function laIntroShow(){
+  if(document.querySelector('.battle-briefing'))return;
   try{
     if(!RUN || MATCH || !Array.isArray(RUN.laNewPend) || !RUN.laNewPend.length) return;
     if(app.classList.contains('play') || document.querySelector('.modal, .recintro, .lachap, .landintro, .vict, .coach, #tip')) return setTimeout(laIntroShow, 600);
@@ -9932,6 +9934,39 @@ const SP_BURST = 'data:image/webp;base64,UklGRgQXAABXRUJQVlA4TPcWAAAvKwErEAmGbdt
   Promise.all([entrance, loaded, fonts]).then(close);
   setTimeout(close, 6000); // safety net: never hold the player on the splash
 })();
+/* One Campaign arrival, one clear decision. Optional preparation stays available. */
+function cityBattleBriefing(boss){
+  const circuit=CIR(),trait=cpDef(land(),RUN.circuit),limit=moveLimitFor(parFor(),boss.id);
+  const target=targetFor(RUN.blind),reward=BLINDS[RUN.blind].reward,bonus=cityRouteReward();
+  const roster=(RUN.roster||[]).filter(Boolean),relics=(RUN.relics||[]).filter(Boolean),cards=RUN.cards||[];
+  const stage=rulerRoad()?'Final battle':`Fight ${RUN.ante} of ${CIRCUIT_STAGES}`;
+  const rule=RUN.blind===2?boss.desc:'';
+  app.innerHTML=`<section class="screen battle-briefing" aria-labelledby="briefingOpponent">
+    <div class="briefing-top"><button class="city-text-button" id="bback">Menu</button><span>${hearts(lives())} <b>$${RUN.money}</b></span></div>
+    <p class="briefing-kicker">${circuit.name} · ${stage}</p>
+    <p class="briefing-location">${stageName(RUN.ante)}</p>
+    <div class="briefing-emblem">${journeyStopLogo(boss.ruler||boss.mini?'boss':'fight')}</div>
+    <p class="briefing-label">${boss.ruler?'Ruler challenge':boss.mini?'Circuit boss':'Your opponent'}</p>
+    <h1 id="briefingOpponent">${bossName(boss.id)}</h1>
+    <div class="briefing-goal"><span>Score <strong>${target.toLocaleString()}</strong> or checkmate</span>${limit?`<b class="briefing-limit">Within ${limit} moves</b>`:''}</div>
+    ${rule?`<p class="briefing-rule">${rule}</p>`:''}
+    <p class="briefing-reward">Win reward <b>$${reward}${bonus?` + $${bonus} route bonus`:''}</b></p>
+    <button class="btn" id="play">Start battle</button>
+    <button class="city-text-button briefing-rules" id="battleRules">Full battle rules</button>
+    <details class="briefing-details"><summary>District &amp; route details</summary><div>${trait?`<p><b>${trait.tr}</b><br>${trait.line}</p>`:''}${cityRouteNote()}${csMyst(land(),RUN.circuit)?`<p>${csMyst(land(),RUN.circuit)}</p>`:''}<p>${stage} · ${rulerRoad()?'Win to claim the crown.':RUN.ante<CIRCUIT_STAGES?'Win to reach the next stop.':'Win to clear this circuit.'}</p></div></details>
+    <div class="briefing-prep"><button id="armyReview">Review army <small>${roster.length} pieces</small></button><button id="trainbtn">Training <small>$${RUN.money} available</small></button></div>
+    ${relics.length||cards.length?`<details class="briefing-details"><summary>Equipment · ${relics.length} relics · ${cards.length} cards</summary><div>${relics.length?relicRow():''}${cards.length?`<p>${cards.map(id=>`<b style="color:${C(id).col}">${C(id).name}</b>`).join(', ')}</p>`:''}</div></details>`:''}
+  </section>`;
+  $('#play').onclick=()=>{ $('#play').disabled=true;startBlind(); };
+  $('#battleRules').onclick=()=>bossDetails(boss);
+  $('#armyReview').onclick=armyInfo;
+  $('#trainbtn').onclick=()=>trainingModal(blindSelect);
+  $('#bback').onclick=()=>{save();title();};
+  bindRelicTips(app);
+  // Circuit geography and traits are now inline; no timed skyline covers the briefing.
+  if(RUN.ante===1&&RUN.csArrived!==RUN.circuit){RUN.csArrived=RUN.circuit;save();}
+}
+
 /* An isolated, guided training board. No RUN, B, cash or roster is modified. */
 let cityTrainingCancel = null;
 let cityOpeningTimer=null;

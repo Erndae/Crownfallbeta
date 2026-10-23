@@ -26,3 +26,17 @@ body .screen .landpick{display:grid!important;grid-template-columns:repeat(2,min
 .opening-map{border:1px solid #53636a;border-radius:12px;overflow:hidden;background:#14262e}.opening-map svg{display:block;width:100%;max-height:32vh}.opening-location{padding:7px 12px;color:#ff70b6;font-size:12px;letter-spacing:1px;background:#101e25}
 .opening-story h3{font-size:22px;margin:0 0 7px;color:#e8bf7e}.opening-story p{font-size:15px;line-height:1.45;margin:6px 0;color:#e7e2d8}.city-prologue>.btn{width:100%;min-height:48px}.opening-progress{text-align:center;font-size:10px!important}
 @media(max-height:720px){.city-prologue{gap:6px;padding:10px!important}.opening-map svg{max-height:25vh}.opening-story p{font-size:14px;line-height:1.35}.opening-top h2{font-size:24px}}
+
+/* Campaign battle briefing: one primary action, with optional preparation below. */
+body[data-pack] .screen.battle-briefing{max-width:480px;margin:0 auto;padding:20px 18px;border-radius:10px!important}
+.briefing-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:18px}.briefing-top>span{display:flex;align-items:center;gap:12px;color:#d2b477;font-size:15px}.briefing-top .city-text-button{margin:0}
+.briefing-kicker{font-size:11px;text-transform:uppercase;letter-spacing:1.4px;color:#cfb888;margin:0 0 5px}.briefing-location{font-size:16px;color:#d7d9cd;margin:0 0 16px}
+.briefing-emblem{color:var(--brass,#dfbb80);margin:4px 0 12px}.briefing-emblem svg{width:42px;height:42px}.briefing-label{font-size:11px;letter-spacing:1.3px;text-transform:uppercase;color:#aebbb8;margin:0 0 4px}
+.battle-briefing h1{font-size:32px!important;line-height:1.1;margin:0 0 18px!important;letter-spacing:0!important;text-transform:none;color:#f0e9db}
+.briefing-goal{display:flex;flex-direction:column;gap:6px;padding:14px;background:#111d23;border:1px solid #516064;border-radius:7px;color:#e1e5db;font-size:16px}.briefing-goal strong{font-size:25px;color:#efcb8b}.briefing-limit{font-size:13px;color:#ffb7b7}
+.briefing-rule{font-size:14px;line-height:1.5;color:#ece4d9;margin:12px 0}.briefing-reward{font-size:13px;color:#b5c0b8;margin:12px 0 16px}.briefing-reward b{color:#e9c589;margin-left:5px}
+.battle-briefing>#play{width:100%;min-height:50px;margin:0}.briefing-rules{display:block;margin:12px auto 16px;font-size:13px}
+.briefing-details{border-top:1px solid #56605a80;font-size:13px;color:#d8dfd5}.briefing-details summary{cursor:pointer;padding:13px 0;min-height:44px;box-sizing:border-box}.briefing-details>div{padding:0 0 12px}.briefing-details p{font-size:13px;line-height:1.5;margin:8px 0}.briefing-details .training-note{background:none;border:0;padding:0;text-align:left}
+.briefing-prep{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:4px 0 12px}.briefing-prep>button{border:1px solid #59645f;border-radius:6px;padding:11px 8px;color:#e5ddcb;text-align:left;font:600 14px var(--body);min-height:54px;background:#17242a}.briefing-prep small{display:block;font-size:11px;font-weight:400;color:#b0bbb1;margin-top:4px}
+.briefing-details .relic.empty{display:none}.briefing-details .relics{justify-content:flex-start}
+@media(max-height:720px){body[data-pack] .screen.battle-briefing{padding:14px}.briefing-top{margin-bottom:12px}.briefing-location{margin-bottom:10px}.briefing-emblem{margin:0 0 8px}.briefing-emblem svg{width:32px;height:32px}.battle-briefing h1{font-size:28px!important;margin-bottom:12px!important}.briefing-rule{margin:8px 0}.briefing-reward{margin:8px 0 12px}}
