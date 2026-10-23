@@ -12,3 +12,30 @@ values.set('crownrunner-character-v1',JSON.stringify({name:'Old Runner',palette:
 api.save({name:'\u0000   ',palette:'__proto__',crown:'<script>',crest:'unknown'});assert.equal(api.get().name,'Crownrunner');assert.equal(api.get().palette,'gold');assert.equal(api.get().crown,'classic');assert.equal(api.get().crest,'none');
 values.set('crownrunner-character-v1','broken JSON');assert.equal(api.get().name,'Crownrunner');const count=events.length;blocked=true;assert.equal(api.save({name:'Unsaved'}),false);assert.equal(events.length,count);
 console.log('PASS: 36 piece designs, mixed sets, sizes, finishes, old-profile migration, 96 King combinations, normalized profiles, persistent selection, corrupt-storage fallback, failed-save handling, and untouched Campaign/Gauntlet data.');
+// Enemy geometry, scale, carving and finish never read the player's profile.
+blocked=false;
+const enemy=Object.fromEntries('KQRBNP'.split('').map(t=>[t,api.art(t,'en')]));
+for(const pieceSet of ['sculpted','street','crystal','wild','relic','classic'])for(const size of ['compact','balanced','large','grand'])for(const finish of ['matte','polished','duo']){
+ const profile={pieceSet,size,finish,palette:'coral',crown:'runic',crest:'star',pieces:{N:'wild',R:'crystal'}};
+ api.save(profile);
+ for(const t of 'KQRBNP')assert.equal(api.art(t,'en'),enemy[t],'Enemy '+t+' ignores player customization');
+}
+assert.notEqual(api.art('N','me',{pieceSet:'wild',size:'grand'}),api.art('N','me',{pieceSet:'classic',size:'compact'}));
+// Exercise the compact editor: changes are previews until Save; Cancel keeps
+// the stored look, and a whole-army set clears the old individual overrides.
+let dialog;
+const makeNode=()=>({value:'',hidden:false,innerHTML:'',textContent:'',dataset:{},attributes:{},setAttribute(k,v){this.attributes[k]=v;},focus(){}});
+c.document.querySelector=()=>null;c.document.activeElement={focus(){}};
+c.document.createElement=()=>{
+ const nodes=new Map(),node=s=>{if(!nodes.has(s))nodes.set(s,makeNode());return nodes.get(s);};
+ const colors=['gold','ivory','coral','mint','sky','lilac'].map(color=>Object.assign(makeNode(),{dataset:{color}}));
+ const pieces='KQRBNP'.split('').map(piece=>Object.assign(makeNode(),{dataset:{piece}}));
+ dialog={...makeNode(),querySelector:node,querySelectorAll:s=>s==='[data-color]'?colors:s==='[data-piece]'?pieces:[],addEventListener(){},showModal(){this.shown=true;},close(){this.closed=true;},remove(){}};return dialog;
+};c.document.body={append(){}};
+api.save({pieceSet:'street',pieces:{N:'wild'},size:'compact',palette:'mint'});const original=JSON.stringify(api.get());
+api.open();assert(dialog.shown);assert(!dialog.innerHTML.includes('role="tablist"'));assert.match(dialog.innerHTML,/<details class="look-more"><summary>More options/);assert.match(dialog.innerHTML,/Changes apply to your pieces only/);
+dialog.querySelector('#armyStyle').onchange({target:{value:'crystal'}});assert(dialog.querySelector('.army-style-preview').innerHTML.includes('data-piece-design="crystal"'));assert.equal(JSON.stringify(api.get()),original);dialog.querySelector('.character-cancel').onclick();assert.equal(JSON.stringify(api.get()),original);
+api.open();dialog.querySelector('#armyStyle').onchange({target:{value:'classic'}});dialog.querySelector('#armySize').onchange({target:{value:'grand'}});dialog.querySelector('form').onsubmit({preventDefault(){}});
+assert.equal(api.get().pieceSet,'classic');assert.equal(api.get().size,'grand');assert.equal(Object.keys(api.get().pieces).length,0);assert(dialog.closed);
+for(const t of 'KQRBNP')assert.equal(api.art(t,'en'),enemy[t]);
+console.log('PASS: enemy appearance stays fixed across every player set, size and finish; compact editor previews, Cancel, Save and legacy mixed-set clearing work.');

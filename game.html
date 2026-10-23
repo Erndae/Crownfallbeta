@@ -6,6 +6,7 @@
 <script src="character-style.js"></script>
 <link rel="stylesheet" href="character-style.css">
 <script src="journey-world.js"></script>
+<script src="campaign-opponents.js"></script>
 <script src="journey-stop-icons.js"></script>
 <script src="journey-events.js"></script>
 <meta charset="utf-8">
@@ -3213,7 +3214,8 @@ LEVELS.throne = {rounds:['Ashen Trial','Gauntlet','Throne Guard'], chips:['ASH',
   bosses:{clock:'The Hourglass Wraith', wall:'The Obsidian Wall', thief:'The Stablebane', march:'The Twin Shadows', tax:'The Tithe Collector', crown:'The Fallen Grandmaster'}};
 const LV = () => LEVELS[land()] || LEVELS.street;
 const roundName = i => LV().rounds[i];
-const bossName = id => id === 'ruler' ? RULER().name : id === 'mini' ? miniName() : LV().bosses[id] || (BOSSES.find(b => b.id === id) || {}).name;
+const bossRuleName = id => id === 'ruler' ? RULER().name : id === 'mini' ? miniName() : LV().bosses[id] || (BOSSES.find(b => b.id === id) || {}).name;
+const bossName = (id,stage=RUN?.ante) => id && id!=='ruler' && id!=='mini' && MODE==='campaign' && RUN && !RUN.gauntlet && !MATCH ? campaignOpponentName(RUN,stage)||bossRuleName(id) : bossRuleName(id);
 const STAGES = 6;
 const CIRCUIT_STAGES = 4, CIRCUIT_STAGE_IDX = [0, 1, 3, 4];
 const nStages = c => (c !== undefined ? c : RUN && RUN.circuit) === 'ruler' ? STAGES : CIRCUIT_STAGES;
@@ -3515,11 +3517,11 @@ const RULE = x => ruleOf(bossId()).includes(x);
 // second move with a different piece, no recharge). B.shadow holds the charge, so save/CONTINUE remembers it.
 const MARCH_DBL = {street:['Double Dutch','Dana'], medieval:['Twin Strike','the Twin Knights'], greek:['Winged Step','Hermes'],
   fantasy:['Second Head','the Ogre'], throne:['Twin Eclipse','the Twin Shadows']};
-const marchDbl = () => (RUN && RUN.gauntlet ? ['Double Move', 'the enemy'] : MARCH_DBL[land()]) || ['Double Turn','the boss'];
+const marchDbl = () => (RUN && RUN.gauntlet ? ['Double Move', 'the enemy'] : MODE==='campaign' && RUN && !MATCH ? ['Double Turn',bossName('march')] : MARCH_DBL[land()]) || ['Double Turn','the boss'];
 const dblRule = () => RULE('shadow') || RULE('march');                 // bosses with a one-use double turn
 const dblLabel = () => RULE('march') && !RULE('shadow') ? marchDbl()[0] : 'Shadow Step';
 const dblWho = () => RULE('march') && !RULE('shadow') ? marchDbl()[1].replace(/^the /, 'The ') : 'Morwen';
-function bossObj(id){ if(id === 'ruler'){ const r = RULER(); return {id, name:r.name, desc:r.desc, ruler:true}; } if(id === 'mini'){ const rule = MINI_RULE[RUN.circuit] || 'crown'; return {id, name:miniName(), desc:MINI_DESC[rule], mini:true}; } if(id === 'march'){ const [lab, who] = marchDbl(); return {...BOSSES.find(b => b.id === id), desc:`${lab}: once per battle, ${who} may make two moves before you can respond.`}; } return BOSSES.find(b => b.id === id); }
+function bossObj(id){ if(id === 'ruler'){ const r = RULER(); return {id, name:r.name, desc:r.desc, ruler:true}; } if(id === 'mini'){ const rule = MINI_RULE[RUN.circuit] || 'crown'; return {id, name:miniName(), desc:MINI_DESC[rule], mini:true}; } if(id === 'march'){ const [lab, who] = marchDbl(); return {...BOSSES.find(b => b.id === id), name:bossName(id), desc:`${lab}: once per battle, ${who} may make two moves before you can respond.`}; } const boss=BOSSES.find(b => b.id === id); return boss?{...boss,name:bossName(id)}:boss; }
 /* ---------- score targets ----------
    A new army grows fast, so it plays the original curve (this is all of Crown City Easy on a fresh save).
    Once an army has been through a few circuits its Training is capped and its pieces are customised, so its
@@ -3578,8 +3580,8 @@ function targetParts(i){
   let t = Math.min(prog, cap); if(fresh != null) t = Math.min(t, fresh); if(blitz != null) t = Math.min(t, blitz);
   t *= lim ? (land() === 'street' ? betaBlitzF() : Math.pow(betaRatio(), 1.5)) : betaSizeF();   // beta: army-size factor (beta 2: Blitz after Crown City uses ratio^1.5, was ratio^2.5)
   if(!lim && land() === 'street') t *= CC_TARGET[RUN.circuit] || 1;   // beta 2: Crown City share calibration
-  if(i === 2 && RUN.land === 'street') t *= CITY_BLITZ_TARGET[bossName(bossAt(RUN.ante))] || 1;   // v124: Crown City's Blitz bosses
-  if(i === 2 && RUN.land === 'street' && RUN.circuit === 'downtown' && bossName(bossAt(RUN.ante)) === 'Speedy Rico') t *= RICO_DOWNTOWN_TARGET;   // v126
+  if(i === 2 && RUN.land === 'street') t *= CITY_BLITZ_TARGET[bossRuleName(bossAt(RUN.ante))] || 1;   // v124: Crown City's Blitz bosses
+  if(i === 2 && RUN.land === 'street' && RUN.circuit === 'downtown' && bossRuleName(bossAt(RUN.ante)) === 'Speedy Rico') t *= RICO_DOWNTOWN_TARGET;   // v126
   const r = x => x == null ? null : Math.max(10, Math.round(x / 10) * 10);
   return {prog:r(prog), cap:r(cap), fresh:r(fresh), blitz:r(blitz), final:r(t), ppm:capacityPPM(), power:+armyPower().toFixed(3), sizeF:+(lim ? (land() === 'street' ? betaBlitzF() : Math.pow(betaRatio(), 1.5)) : betaSizeF()).toFixed(2)};
 }
@@ -4175,7 +4177,7 @@ const ARCHE = {   // tag: the short pre-fight label (none = a recognisable but n
 const sigBase = a => a ? a.replace('+', '') : null;
 function bossSignature(P){
   if(!P || !P.boss || P.ruler) return null;
-  return SIG_BOSS[bossName(P.id)] || null;
+  return SIG_BOSS[bossRuleName(P.id)] || null;
 }
 // composition for an archetype at n pieces; prot (0-2) softens the signature itself while keeping its identity
 function signatureRoster(arche, n, prot){
@@ -4234,7 +4236,7 @@ function enemyProfile(){
   const cap = l === 'throne' ? ENEMY_ARMY.fullArmy : ENEMY_ARMY.maxPieces;   // beta: full 16-piece armies in the Fallen Throne
   const n = armySize();                                                       // see ARMY_SIZE / aiSlot
   const power = L.power + D.power, q = tier + (boss ? 1 : 0) + power;         // q = overall army quality
-  const persona = boss && id ? (PERSONA[bossName(id)] || {}) : {};
+  const persona = boss && id ? (PERSONA[bossRuleName(id)] || {}) : {};
   const style = persona.style || (Math.random() < 0.6 ? ENEMY_ARMY.landStyle[l] : pick(['aggressive','defensive','hunter','tricky','greedy']));
   const P = {land:l, tier, boss, id, ruler:id === 'ruler', n, power, q, style};
   P.sig = bossSignature(P);
@@ -4304,7 +4306,7 @@ const cpPick = (v, st) => Array.isArray(v) ? v[st] : v;
 // applied to an ordinary or boss army that has no signature army of its own (never Rulers)
 function cpApplyProfile(P){
   const c = cpFor(); if(!c){ return; } P.cp = {tr:c.tr, I:c.I}; if(!c.I) return;
-  const d = c.d, st = clamp(RUN.ante, 1, 4) - 1, persona = P.boss && P.id && (PERSONA[bossName(P.id)] || {}).style;
+  const d = c.d, st = clamp(RUN.ante, 1, 4) - 1, persona = P.boss && P.id && (PERSONA[bossRuleName(P.id)] || {}).style;
   if(d.st && !persona) P.style = cpPick(d.st, st);
   if(c.I >= 2 && RUN.blind >= 1 && d.sg && Math.random() < d.sg[0] * (c.I >= 3 ? 1.3 : 1)){ P.sig = pick(d.sg[1]); P.cp.sig = P.sig; return; }   // an existing signature army
   if(d.ln) P.lean = d.ln;
@@ -4369,7 +4371,7 @@ function salLayout(board, list, L){
 }
 const SAL_MODE = 'split6';
 SAL_LAYOUTS.split6 = SAL_LAYOUTS.split;   // beta 2 Skyline Sal layout ('b1' = Beta 1's)
-const isSal = P => P && P.boss && P.id && P.land === 'street' && bossName(P.id) === 'Skyline Sal';
+const isSal = P => P && P.boss && P.id && P.land === 'street' && bossRuleName(P.id) === 'Skyline Sal';
 function placeArmy(board, list, P){
   if(P && P.salL){ const sb = salLayout(board, list, P.salL); if(sb){ screenLines(sb); return sb; } }
   const b = board.slice(), m = Math.random() < 0.5, C = c => m ? 7 - c : c, at = (r, c) => r * 8 + C(c);
@@ -4857,7 +4859,9 @@ function storyLines(o){
 }
 const STYLE_TXT = {aggressive:'Aggressive: charges in and trades pieces', hunter:'King hunter: goes straight for your King', tricky:'Tricky: sets up forks and double attacks', greedy:'Greedy: grabs anything worth money', defensive:'Defensive: protects its pieces and waits for mistakes'};
 function curPersona(){ if(!RUN || !B || RUN.blind !== 2) return null; const id = bossId(); if(!id) return null; return personaOf(id); }
-function personaOf(id){ const n = bossName(id); if(PERSONA[n]) return storyLines({name:n, ...PERSONA[n], ruler:id === 'ruler'}); if(SIMPLE_TALK[n]) return storyLines({name:n, ...SIMPLE_TALK[n], simple:true}); return null; }
+function personaOf(id){ const n = bossName(id);
+  if(n && n!==bossRuleName(id)) return storyLines({name:n,style:(PERSONA[bossRuleName(id)]||{}).style,intro:'This is my ground. Make your move.',capture:['That square is mine.'],hurt:['I saw that too late.'],check:'Your King is exposed.',lose:'The road is yours.',win:'This is where your journey stops.'});
+  if(PERSONA[n]) return storyLines({name:n, ...PERSONA[n], ruler:id === 'ruler'}); if(SIMPLE_TALK[n]) return storyLines({name:n, ...SIMPLE_TALK[n], simple:true}); return null; }
 function portrait(pp){
   if(pp.ruler) return rulerFace(land(), 'talk') || `<span class="spk-face ruler">${crownSVG(land(), 'hard', true)}</span>`;
   const c = CIR(); return `<span class="spk-face${pp.simple ? ' simple' : ''}" style="--fc:${pp.simple ? '#3a393c' : c.col}">${pieceSVG(pp.simple ? 'Q' : 'K','en')}</span>`;
@@ -5562,7 +5566,7 @@ function bossChips(id){
 }
 function bossDetails(boss){
   if(RUN && RUN.gauntlet && !MATCH) return gFoeDetails(boss);   // v152
-  const pp = personaOf(boss.id), a = SIG_BOSS[bossName(boss.id)], A = a && ARCHE[sigBase(a)], lim = moveLimitFor(parFor(), boss.id);
+  const pp = personaOf(boss.id), a = SIG_BOSS[bossRuleName(boss.id)], A = a && ARCHE[sigBase(a)], lim = moveLimitFor(parFor(), boss.id);
   const m = modal(`<p class="tr-kicker" style="margin:0">${boss.ruler ? 'Ruler' : boss.mini ? 'Rival · Circuit boss' : 'Boss'}</p><h2 style="margin:0">${bossName(boss.id)}</h2>
     <div class="cash" style="gap:8px;display:flex;flex-direction:column">
       <div><b style="font-family:var(--display);font-weight:400;color:#ffb3bd">Rules</b><br><span style="font-size:14px">${boss.desc}</span></div>
@@ -5579,7 +5583,7 @@ function stageProgress(){
   if(rulerRoad()) return `<div class="stprog ruler" role="group" aria-label="The Ruler’s Road, the final battle of this Land"><p><b>The Ruler’s Road · Final battle</b><span>Win to claim ${/^The /.test(landCrownName(land())) ? landCrownName(land()) : 'the ' + landCrownName(land())}</span></p></div>`;
   const a = Math.min(RUN.ante, CIRCUIT_STAGES), role = STAGE_ROLE[a - 1] || '';
   const next = a < CIRCUIT_STAGES ? `Win to advance to Stage ${a + 1}` : `Win to clear ${CIR().name}`;
-  return `<div class="stprog" role="group" aria-label="Stage ${a} of ${CIRCUIT_STAGES}, ${role}. Current opponent: ${bossName(bossAt(a))}. ${next}.">
+  return `<div class="stprog" role="group" aria-label="Stage ${a} of ${CIRCUIT_STAGES}, ${role}. Current opponent: ${bossName(bossAt(a),a)}. ${next}.">
     <ol class="stpips" aria-hidden="true">${STAGE_ROLE.map((r, i) => `<li class="${i + 1 < a ? 'done' : i + 1 === a ? 'cur' : ''}"><i>${i + 1 < a ? '✓' : i + 1}</i><small>${r === 'Elite Challenge' ? 'Elite' : r === 'Circuit Boss' ? 'Boss' : r === 'Introduction' ? 'Intro' : r}</small></li>`).join('')}</ol>
     <p><b>Stage ${a} · ${role}</b><span>${next}</span></p></div>`;
 }
@@ -5658,7 +5662,7 @@ function blindSelect(){
       <span style="font-family:var(--display)">${i===2 ? bossName(boss.id) : roundName(i)}</span>
       <small>Score at least</small><b>${t(i).toLocaleString()}</b>
       <small>Reward $${bl.reward}${cityRouteReward() ? ` + $${cityRouteReward()} route bonus` : ''}</small>
-      ${i===2 ? `<div class="bchips">${bossChips(boss.id).map(c => `<small class="bsig rule">${c}</small>`).join('')}${(() => { const a = SIG_BOSS[bossName(boss.id)], t = a && ARCHE[sigBase(a)] && ARCHE[sigBase(a)].tag; return t ? `<small class="bsig">${t}</small>${DOUBLE_MARCH.has(sigBase(a)) ? '<small class="bsig dm">Double March</small>' : ''}` : ''; })()}</div>` : ''}
+      ${i===2 ? `<div class="bchips">${bossChips(boss.id).map(c => `<small class="bsig rule">${c}</small>`).join('')}${(() => { const a = SIG_BOSS[bossRuleName(boss.id)], t = a && ARCHE[sigBase(a)] && ARCHE[sigBase(a)].tag; return t ? `<small class="bsig">${t}</small>${DOUBLE_MARCH.has(sigBase(a)) ? '<small class="bsig dm">Double March</small>' : ''}` : ''; })()}</div>` : ''}
       ${i===2 && personaOf(boss.id) && personaOf(boss.id).style ? `<small class="bstyle">${STYLE_TXT[personaOf(boss.id).style].replace(/: (.)/, (m, c) => ' · ' + c.toUpperCase())}</small>` : ''}
       ${i===2 ? '<small class="bmore">Tap for rules</small>' : ''}
       ${i===2 && boss.ruler ? `<span class="prize">${crownSVG(land(), 'hard', true)}<small>${landWon(land()) ? 'Defend' : 'Win'} ${/^The /.test(landCrownName(land())) ? landCrownName(land()) : 'the ' + landCrownName(land())}</small></span>` : ''}
@@ -5710,7 +5714,7 @@ function moveLimitFor(par, bossKey, baseOnly){
     const n = typeof m === 'number' ? m : m && typeof m.par === 'number' ? par + m.par : null;
     if(n != null) lim = lim == null ? n : Math.min(lim, n); }
   if(lim == null) return null;
-  const extra = !baseOnly && RUN && RUN.land === 'street' ? (CITY_BLITZ[bossName(id)] || 0) : 0;
+  const extra = !baseOnly && RUN && RUN.land === 'street' ? (CITY_BLITZ[bossRuleName(id)] || 0) : 0;
   return Math.max(1, lim + blitzBonus() + extra);
 }
 const blitzOn = () => !!(B && B.moveLimit);
@@ -8884,7 +8888,7 @@ function winBlind(){
   // presentation facts, captured before the commit below moves the run on
   const vLand = land(), vRuler = bossWin && bossId() === 'ruler', vName = roundName(RUN.blind), vScore = B.score, vLog = B.log;
   const vOpp = bossWin && !vRuler ? {tier: bossObj(bossId()).mini ? 'rival' : 'boss', name: bossName(bossId())} : null;   // v132
-  const html = (`${bp ? `<div class="quote">${portrait(bp)}<span>“${bp.lose}”<small>${bp.name}</small></span></div>` : ''}<p class="muted">${bossWin ? bossName(bossId()) : roundName(RUN.blind)} beaten</p><h2 style="color:var(--brass)">${B.mate ? (B.kingFell ? 'The King falls!' : 'Checkmate!') : RUN.circuit === 'ruler' ? 'Ruler defeated!' : `Stage ${RUN.ante} cleared!`}</h2>
+  const html = (`${bp ? `<div class="quote">${portrait(bp)}<span>“${bp.lose}”<small>${bp.name}</small></span></div>` : ''}${bp ? '' : `<p class="muted">${bossWin ? bossName(bossId()) : roundName(RUN.blind)} beaten</p>`}<h2 style="color:var(--brass)">${B.mate ? (B.kingFell ? 'The King falls!' : 'Checkmate!') : RUN.circuit === 'ruler' ? 'Ruler defeated!' : `Stage ${RUN.ante} cleared!`}</h2>
     <div class="kv"><span>Score</span><b>${B.score.toLocaleString()} / ${B.target.toLocaleString()}</b></div>
     ${B.mateBonus ? `<div class="kv"><span>Checkmate score bonus</span><b style="color:var(--brass)">+${B.mateBonus.toLocaleString()}</b></div>` : ''}
     <div class="cash">

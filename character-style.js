@@ -17,7 +17,7 @@
  const shape=(v=get())=>crowns[clean(v).crown].shape+designs.kingBody(designId('K',v));
  const crest=(v=get())=>{const c=crests[clean(v).crest];return c.shape?`<path d="${c.shape}" fill="#25313a" stroke="none"/>`:'';};
  function art(t,side='me',value=get(),material={}){
-  const p=clean(value),me=side!=='en',id=designId(t,p),color=palettes[p.palette],fill=material.fill||(me?color.fill:'#1a202a'),stroke=material.stroke||(me?'#17222a':'#ec789d'),scale=sizes[p.size].scale;
+  const me=side!=='en',p=clean(me?value:{...defaults,pieceSet:'classic',size:'balanced',finish:'matte'}),id=designId(t,p),color=palettes[p.palette],fill=material.fill||(me?color.fill:'#1a202a'),stroke=material.stroke||(me?'#17222a':'#ec789d'),scale=sizes[p.size].scale;
   const outline=t==='K'?(me?crowns[p.crown].shape:crowns.classic.shape)+designs.kingBody(id):designs.outline(id,t);
   const baseFill=p.finish==='duo'?(me?color.accent:'#562f46'):fill;
   const sheen=p.finish==='polished'?`<path d="M12 33H27M17 25L16 28" fill="none" stroke="${me?'#fff9df':'#e6a7bd'}" stroke-width="1.1" opacity=".65"/>`:'';
@@ -27,32 +27,38 @@
  const svg=(v=get(),map=false)=>piece('K',v,map);
  function refresh(){const p=get();document.querySelectorAll('[data-character-token]').forEach(el=>{el.innerHTML=svg(p,el.dataset.characterToken==='map');});document.querySelectorAll('[data-character-name]').forEach(el=>el.textContent=p.name);document.querySelectorAll('.player-marker').forEach(el=>el.style.stroke=palettes[p.palette].accent);}
  function save(value){const p=clean(value);try{localStorage.setItem(KEY,JSON.stringify(p));}catch{return false;}refresh();window.dispatchEvent(new CustomEvent('crownfall-character-changed'));return true;}
- function open(initialTab='army'){
+ function open(){
   const existing=document.querySelector('.character-dialog');if(existing){existing.focus();return;}
-  let draft=get(),scope='all';const before=document.activeElement,dialog=document.createElement('dialog');dialog.className='character-dialog';dialog.setAttribute('aria-labelledby','characterTitle');
-  const options=(kind,items)=>Object.entries(items).map(([id,o])=>`<button type="button" class="character-option" data-kind="${kind}" data-value="${id}" aria-pressed="false" ${kind==='palette'?`style="--swatch:${o.fill}"`:''}>${kind==='palette'?'<i class="character-swatch" aria-hidden="true"></i>':kind==='crown'||kind==='crest'?svg({...draft,[kind]:id}):piece('N',{...draft,[kind]:id})}<span>${o.name}</span></button>`).join('');
-  const catalog=Object.entries(designs.sets).map(([id,d])=>`<button type="button" class="piece-set-choice" data-set="${id}" aria-pressed="false"><span class="set-samples"></span><strong>${d.name}</strong><small>${d.description}</small></button>`).join('');
-  dialog.innerHTML=`<form class="character-form"><header><div><small>YOUR CROWNRUNNER &amp; ARMY</small><h2 id="characterTitle">Choose your pieces.</h2></div><button type="button" class="character-close" aria-label="Cancel customization">×</button></header><div class="character-tabs" role="tablist" aria-label="Customization"><button id="armyTab" type="button" role="tab" aria-controls="armyPanel">Pieces</button><button id="kingTab" type="button" role="tab" aria-controls="kingPanel">Your King</button></div>
-  <section id="armyPanel" role="tabpanel" aria-labelledby="armyTab"><div class="army-style-preview" aria-label="Your army preview"></div><label class="character-scope">Style for<select id="pieceScope"><option value="all">Whole army</option>${Object.entries(types).map(([t,name])=>`<option value="${t}">${name} only</option>`).join('')}</select></label><p class="piece-hint">Choose a full set, or mix a different design for each piece.</p><div class="piece-set-catalog">${catalog}</div><details class="piece-sizing"><summary>Size &amp; finish <span id="pieceSettingsLabel"></span></summary><fieldset><legend>Piece size</legend><div class="character-sizes">${options('size',sizes)}</div></fieldset><fieldset><legend>Surface finish</legend><div class="character-finishes">${options('finish',finishes)}</div></fieldset><div class="size-board-preview" aria-label="Piece scale on board squares"></div></details></section>
-  <section id="kingPanel" role="tabpanel" aria-labelledby="kingTab" hidden><div class="character-preview"><div id="characterPreview"></div><div><strong id="characterPreviewName"></strong><p>Your King’s color is your army’s color.</p></div></div><label class="character-name">Character name<input id="characterName" maxlength="20" autocomplete="off" value="${escape(draft.name)}"></label><fieldset><legend>Army color</legend><div class="character-colors">${options('palette',palettes)}</div></fieldset><fieldset><legend>Crown style</legend><div class="character-crowns">${options('crown',crowns)}</div></fieldset><fieldset><legend>Personal crest</legend><div class="character-crests">${options('crest',crests)}</div></fieldset></section><footer><p class="character-status" role="alert" hidden></p><button type="button" class="character-cancel">Cancel</button><button type="submit" class="character-save">Save look</button></footer></form>`;
-  const tab=which=>{for(const [id,on] of [['army',which==='army'],['king',which!=='army']]){dialog.querySelector('#'+id+'Tab').setAttribute('aria-selected',String(on));dialog.querySelector('#'+id+'Tab').tabIndex=on?0:-1;dialog.querySelector('#'+id+'Panel').hidden=!on;}};
+  let draft=get();const before=document.activeElement,dialog=document.createElement('dialog');dialog.className='character-dialog';dialog.setAttribute('aria-labelledby','characterTitle');
+  const options=(items,selected)=>Object.entries(items).map(([id,item])=>`<option value="${id}" ${id===selected?'selected':''}>${item.name}</option>`).join('');
+  const field=(id,label,items,value)=>`<label class="look-select">${label}<select id="${id}">${options(items,value)}</select></label>`;
+  dialog.innerHTML=`<form class="character-form"><header><div><small>YOUR ARMY</small><h2 id="characterTitle">Choose your look.</h2></div><button type="button" class="character-close" aria-label="Cancel customization">×</button></header>
+   <div class="army-style-preview" aria-label="Your army preview"></div><p class="piece-hint">Changes apply to your pieces only.</p>
+   ${field('armyStyle','Piece style',designs.sets,draft.pieceSet)}
+   <p class="mixed-look-note" hidden>Individual piece styles are active. Choosing a set applies it to your whole army.</p>
+   <fieldset class="look-colors"><legend>Army color</legend><div class="character-colors">${Object.entries(palettes).map(([id,color])=>`<button type="button" class="character-option" data-color="${id}" aria-label="${color.name}" title="${color.name}" style="--swatch:${color.fill}"><i class="character-swatch" aria-hidden="true"></i><span>${color.name}</span></button>`).join('')}</div></fieldset>
+   ${field('armySize','Piece size',sizes,draft.size)}
+   <details class="look-more"><summary>More options</summary>
+    ${field('armyFinish','Finish',finishes,draft.finish)}
+    <label class="character-name">Character name<input id="characterName" maxlength="20" autocomplete="off" value="${escape(draft.name)}"></label>
+    ${field('kingCrown','King’s crown',crowns,draft.crown)}${field('kingCrest','King’s crest',crests,draft.crest)}
+    <details class="look-individual"><summary>Individual piece styles</summary><p class="piece-hint">Leave a piece on “Army style” to follow your chosen set.</p>${Object.entries(types).map(([t,name])=>`<label class="look-select">${name}<select data-piece="${t}"><option value="">Army style</option>${options(designs.sets,draft.pieces[t])}</select></label>`).join('')}</details>
+   </details>
+   <footer><p class="character-status" role="alert" hidden></p><button type="button" class="character-cancel">Cancel</button><button type="submit" class="character-save">Save look</button></footer></form>`;
   const preview=()=>{
-   dialog.querySelector('#characterPreview').innerHTML=svg(draft);dialog.querySelector('#characterPreviewName').textContent=draft.name.trim()||defaults.name;
-   dialog.querySelector('.army-style-preview').innerHTML=Object.entries(types).map(([t,name])=>`<button type="button" class="army-preview-piece${scope===t?' selected':''}" data-preview-type="${t}" aria-label="Choose ${name} style">${piece(t,draft)}<span>${name}</span></button>`).join('');
-   dialog.querySelectorAll('[data-preview-type]').forEach(b=>b.onclick=()=>{scope=b.dataset.previewType;dialog.querySelector('#pieceScope').value=scope;preview();});
-   dialog.querySelector('.size-board-preview').innerHTML=['K','N','P'].map(t=>`<span>${piece(t,draft)}</span>`).join('');
-   dialog.querySelector('#pieceSettingsLabel').textContent=sizes[draft.size].name+' · '+finishes[draft.finish].name;
-   dialog.querySelectorAll('[data-kind]').forEach(b=>{const kind=b.dataset.kind,id=b.dataset.value;b.setAttribute('aria-pressed',String(draft[kind]===id));if(kind!=='palette')b.querySelector('svg').outerHTML=kind==='crown'||kind==='crest'?svg({...draft,[kind]:id}):piece(scope==='all'?'N':scope,{...draft,[kind]:id});});
-   dialog.querySelectorAll('[data-set]').forEach(b=>{const id=b.dataset.set,selection=scope==='all'?draft.pieceSet:designId(scope,draft);b.setAttribute('aria-pressed',String(id===selection));const model={...draft,pieceSet:id,pieces:{}};b.querySelector('.set-samples').innerHTML=scope==='all'?piece('N',model)+piece('R',model):piece(scope,model);});
+   dialog.querySelector('.army-style-preview').innerHTML=Object.entries(types).map(([t,name])=>`<span class="army-preview-piece">${piece(t,draft)}<span>${name}</span></span>`).join('');
+   dialog.querySelectorAll('[data-color]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.color===draft.palette)));
+   dialog.querySelector('.mixed-look-note').hidden=!Object.keys(draft.pieces).length;
   };
   const close=()=>{dialog.close();dialog.remove();before?.focus({preventScroll:true});};
   dialog.querySelector('.character-close').onclick=close;dialog.querySelector('.character-cancel').onclick=close;dialog.addEventListener('cancel',e=>{e.preventDefault();close();});
-  dialog.querySelector('#armyTab').onclick=()=>tab('army');dialog.querySelector('#kingTab').onclick=()=>tab('king');dialog.querySelector('.character-tabs').onkeydown=e=>{if(e.key==='ArrowLeft'||e.key==='ArrowRight'){e.preventDefault();const next=dialog.querySelector('#armyTab').getAttribute('aria-selected')==='true'?'king':'army';tab(next);dialog.querySelector('#'+next+'Tab').focus();}};
-  dialog.querySelector('#pieceScope').onchange=e=>{scope=e.target.value;preview();};
-  dialog.querySelector('#characterName').oninput=e=>{draft.name=e.target.value;preview();};dialog.querySelectorAll('[data-kind]').forEach(b=>b.onclick=()=>{draft[b.dataset.kind]=b.dataset.value;preview();});
-  dialog.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>{if(scope==='all'){draft.pieceSet=b.dataset.set;draft.pieces={};}else draft.pieces[scope]=b.dataset.set;preview();});
+  dialog.querySelector('#armyStyle').onchange=e=>{draft.pieceSet=e.target.value;draft.pieces={};dialog.querySelectorAll('[data-piece]').forEach(select=>select.value='');preview();};
+  for(const [id,key]of [['armySize','size'],['armyFinish','finish'],['kingCrown','crown'],['kingCrest','crest']])dialog.querySelector('#'+id).onchange=e=>{draft[key]=e.target.value;preview();};
+  dialog.querySelectorAll('[data-color]').forEach(b=>b.onclick=()=>{draft.palette=b.dataset.color;preview();});
+  dialog.querySelector('#characterName').oninput=e=>{draft.name=e.target.value;};
+  dialog.querySelectorAll('[data-piece]').forEach(select=>{select.value=draft.pieces[select.dataset.piece]||'';select.onchange=e=>{const t=e.target.dataset.piece;if(e.target.value)draft.pieces[t]=e.target.value;else delete draft.pieces[t];preview();};});
   dialog.querySelector('form').onsubmit=e=>{e.preventDefault();if(!save(draft)){const status=dialog.querySelector('.character-status');status.hidden=false;status.textContent='Your browser could not save this look. Try again.';return;}close();};
-  document.body.append(dialog);preview();tab(initialTab==='character'?'king':'army');dialog.showModal();dialog.querySelector('.character-close').focus();
+  document.body.append(dialog);preview();dialog.showModal();dialog.querySelector('.character-close').focus();
  }
  window.CrownfallCharacter={get,save,shape,crest,svg,piece,art,designId,palette:()=>palettes[get().palette],open};
  window.addEventListener('storage',e=>{if(!e.key||e.key.endsWith(KEY)){refresh();window.dispatchEvent(new CustomEvent('crownfall-character-changed'));}});
