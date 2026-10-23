@@ -6393,6 +6393,7 @@ function gGenArmory(){
 const G_TABS = [['recruit', 'Recruit'], ['train', 'Train & Forge'], ['gear', 'Equipment'], ['recover', 'Recovery']];
 const gLifeBought = () => RUN.gLifeAt != null && RUN.gLifeAt === RUN.gArmAt;
 function gArmory(){
+  const shopPosition = shopScrollPosition();
   gArenaSync(false); gEquipClean();
   if(!RUN.shop || !RUN.shop.some(o => o.kind === 'forge')) gGenArmory();
   const tab = G_TABS.some(t => t[0] === RUN.gTab) ? RUN.gTab : 'recruit';
@@ -6458,6 +6459,7 @@ function gArmory(){
   setTimeout(laIntroShow, 350);   // v154
   if(RUN.gUI) setTimeout(() => { if(RUN && RUN.gUI && !document.querySelector('.modal')) gPickOpen(RUN.gUI.k, RUN.gUI.oi, RUN.gUI.ri); }, 0);   // a refresh during a choice reopens it
   else setTimeout(forgeResume, 0);
+  restoreShopScroll(shopPosition);
 }
 function gEligible(id){
   const only = id === 'tshield' ? 'RBNP' : G_EQUIP[id].only;
@@ -9820,11 +9822,20 @@ function trainingModal(after){
   bindTraining(m, draw);
 }
 function spend(x){ RUN.money -= x; RUN.stats = RUN.stats || {kingCaps:0, knightCaps:0, spent:0}; RUN.stats.spent += x; if(RUN.stats.spent >= 60) unlockAch('mm_spender'); }
+// A purchase redraws the same shop. Keep its viewport while updating prices,
+// stock and army panels; a fresh visit still starts at the top.
+function shopScrollPosition(){
+  return app.querySelector('.shopscr') ? {left:window.scrollX,top:window.scrollY} : null;
+}
+function restoreShopScroll(position){
+  if(position) window.scrollTo({...position,behavior:'instant'});
+}
 function shop(){
+  const shopPosition = shopScrollPosition();
   if(RUN && RUN.land && PACK !== RUN.land) setPack(RUN.land);   // tile names always follow the Land you are in
   sceneMusic('land');
   setLandBg(RUN && !RUN.gauntlet && land());
-  window.scrollTo(0, 0);
+  if(!shopPosition) window.scrollTo(0, 0);
   enterLand();
   setCircuitData(RUN && RUN.circuit);   // v133: also keeps the Circuit scene in step
   onTitle = false;
@@ -9910,6 +9921,7 @@ function shop(){
   $('#sback').onclick = () => { save(); title(); };
   $('#next').onclick = () => { RUN.shop = null; RUN.inShop = false; if(RUN.gauntlet){ save(); return gNextWave(); } blindSelect(); };
   coach('shop');
+  restoreShopScroll(shopPosition);
 }
 
 /* Image failure guard: a missing file must never show a broken-image icon, alt text, or a glow/mask
