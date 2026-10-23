@@ -108,18 +108,23 @@ function createJourneyAtlasTheme(c){
  }
  function roads(parent){
   parent.dataset.surface={street:'asphalt',medieval:'cobblestone',greek:'marble',fantasy:'rune-bridge',throne:'broken-causeway'}[land];
+  // Paint the entire network in layers. A later road must never draw its curb
+  // over the asphalt of an earlier road at a junction or shared stretch.
+  const curb=group(parent,'atlas-road-curbs'),surface=group(parent,'atlas-road-surfaces'),markings=group(parent,'atlas-road-markings');
   for(const d of paths){
    if(land==='fantasy'){
-    path(parent,d,'none','#101526',27);path(parent,d,'none','#887eac',17);path(parent,d,'none','#c7b9e2',2,{'stroke-dasharray':'3 16'});
+    path(curb,d,'none','#101526',27);path(surface,d,'none','#887eac',17);path(markings,d,'none','#c7b9e2',2,{'stroke-dasharray':'3 16'});
    }else{
-    path(parent,d,'none',p.pave,land==='street'?48:54);path(parent,d,'none',p.road,land==='street'?33:39);
-    path(parent,d,'none',land==='street'?'#b9bfae':p.edge,land==='medieval'?26:1.5,{'stroke-dasharray':land==='medieval'?'2 10':land==='greek'?'3 12':'10 16','stroke-opacity':land==='medieval'?.22:.38});
+    path(curb,d,'none',p.pave,land==='street'?48:54);path(surface,d,'none',p.road,land==='street'?33:39);
+    // Local city streets stay unmarked: route guidance is drawn separately.
+    // This also avoids duplicate lane paint on shared graph connections.
+    if(land!=='street')path(markings,d,'none',p.edge,land==='medieval'?26:1.5,{'stroke-dasharray':land==='medieval'?'2 10':land==='greek'?'3 12':'10 16','stroke-opacity':land==='medieval'?.22:.38});
    }
   }
   if(land==='street'){
    const furniture=group(parent,'atlas-city-traffic');
    samples.forEach(([x,y],i)=>{if(i%13||g.nodes.some(n=>Math.hypot(n.x-x,n.y-y)<95))return;const color=['#a16c64','#c2ac74','#648fa0'][i%3];rect(furniture,x-4,y-9,8,18,color,'#172d38',2);rect(furniture,x-3,y-4,6,6,'#283e4b','none',0);});
-   for(const n of g.nodes){for(let k=0;k<4;k++)rect(furniture,n.x-18+k*10,n.y+48,5,20,'#d2d4be99','none',0);for(const dx of[-50,50]){circle(furniture,n.x+dx,n.y-24,9,'#f6d19b13');circle(furniture,n.x+dx,n.y-24,2.5,'#f4d29d');}}
+   for(const n of g.nodes){for(let k=0;k<4;k++)rect(furniture,n.x+(n.type==='entry'?45:-65)+k*6,n.y-14,3,28,'#d2d4be99','none',0);for(const dx of[-50,50]){circle(furniture,n.x+dx,n.y-24,9,'#f6d19b13');circle(furniture,n.x+dx,n.y-24,2.5,'#f4d29d');}}
   }
  }
  function site(parent,n){

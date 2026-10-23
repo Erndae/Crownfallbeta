@@ -9,7 +9,7 @@ function worldStopName(n){return (n.type==='fight'||n.type==='entry'?n.name:n.sh
 function worldColor(type){const t=journeyLand(networkData.land);return type==='supply'||type==='cache'?t.shop:type==='risky'?t.risk:type==='safer'?t.safe:'#d1d8d4';}
 function worldPath(a,b){
  if(networkData.land==='street'){
-  const dx=b.x-a.x,dy=b.y-a.y,mid=a.x+dx*.5,r=Math.min(26,Math.abs(dy)/2,Math.abs(dx)/5),dir=Math.sign(dy);
+  const dx=b.x-a.x,dy=b.y-a.y,mid=Math.round((a.x+dx*.5)/50)*50,r=Math.min(26,Math.abs(dy)/2,Math.abs(dx)/5),dir=Math.sign(dy);
   return r?`M${a.x} ${a.y} H${mid-r} Q${mid} ${a.y} ${mid} ${a.y+dir*r} V${b.y-dir*r} Q${mid} ${b.y} ${mid+r} ${b.y} H${b.x}`:`M${a.x} ${a.y} H${b.x}`;
  }
  const shape=journeyLand(networkData.land).shape;
