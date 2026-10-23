@@ -17,6 +17,17 @@ let tested=0,shopPaths=0,cachePaths=0;const degrees=new Set();
 for(const land of lands)for(const circuit of circuits)for(const stage of circuit==='ruler'?[6]:[1,2,3,4]){
  const run={land,circuit,ante:stage,blind:2,money:10,armyStages:4};
  const initial=setup(run),g=initial.eval(`journeyGraph({land:'${land}',circuitId:'${circuit}',stage:${stage}})`);
+ // Every advertised junction offers distinct reachable choices on arrival.
+ for(const node of g.nodes.filter(n=>n.type==='road')){
+  const exits=g.edges.filter(e=>e.from===node.id);
+  assert(exits.length>=2,'A junction must have multiple exits: '+node.id);
+  assert(new Set(exits.map(e=>g.byId[e.to].type)).size>=2,'Junction choices have different benefits');
+  const arrived=initial.eval('journeyGraph('+JSON.stringify({land,circuitId:circuit,stage:node.stage,record:{position:node.id}})+')');
+  assert.equal(arrived.active.length,exits.length,'Arrival unlocks every onward branch');
+  const summary=initial.eval('journeyJunctionSummary(journeyGraph('+JSON.stringify({land,circuitId:circuit,stage:node.stage})+'),'+JSON.stringify(node)+')');
+  assert(summary.startsWith('Choose from '+exits.length+' routes:'));
+  for(const e of exits)assert(g.edges.some(next=>next.from===e.to&&g.byId[next.to].stage===node.stage)||g.byId[e.to].type==='fight');
+ }
  // Enumerate every possible route to this fight, not just a preferred path.
  const paths=[];function visit(id,path){const edges=g.edges.filter(e=>e.from===id&&g.byId[e.to].stage===g.current);degrees.add(edges.length);for(const e of edges){const p=[...path,e.to];if(g.byId[e.to].type==='fight')paths.push(p);else visit(e.to,p);}}visit(g.position,[]);
  assert(paths.length>=4);assert(paths.some(p=>p.some(id=>g.byId[id].type==='supply')));assert(paths.some(p=>p.every(id=>g.byId[id].type!=='supply')));

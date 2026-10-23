@@ -1,6 +1,6 @@
 'use strict';
 const legacyCards=document.querySelector('.route-cards').innerHTML;
-function worldBenefit(type){return {safer:'Next fight is 20% easier.',risky:'Next fight is 20% harder. Win $8 extra.',supply:'Get $5, then recruit, train and shop.',cache:'Collect $3, then keep travelling.',road:'Reach a junction with more routes.',fight:'Enter the battle at this location.'}[type]||'Continue your journey.';}
+function worldBenefit(type,node,graph=networkPlan){if(type==='road'&&node)return journeyJunctionSummary(graph,node);return {safer:'Next fight is 20% easier.',risky:'Next fight is 20% harder. Win $8 extra.',supply:'Get $5, then recruit, train and shop.',cache:'Collect $3, then keep travelling.',road:'Choose an onward connection.',fight:'Enter the battle at this location.'}[type]||'Continue your journey.';}
 function restoreLegacyCards(){
  const cards=document.querySelector('.route-cards');cards.innerHTML=legacyCards;
  cards.querySelectorAll('button').forEach(b=>{const icon=b.querySelector('.route-card-top svg');if(icon)icon.outerHTML=journeyStopLogo(b.dataset.route);b.onclick=()=>selectRoute(b.dataset.route);});
@@ -53,7 +53,7 @@ function buildWorldNetwork(data){
  for(const e of g.active){const n=g.byId[e.to],t=JOURNEY_STOP_TYPES[n.type],button=document.createElement('button');button.className='route-card';button.dataset.route=n.id;button.style.setProperty('--route',worldColor(n.type));button.setAttribute('aria-pressed','false');
   const top=document.createElement('div');top.className='route-card-top';top.innerHTML=journeyStopLogo(n.boss?'boss':n.type);const kind=document.createElement('span');kind.textContent=n.boss?'BOSS BATTLE':t.label.toUpperCase();top.append(kind);
   const title=document.createElement('h3');title.textContent=worldStopName(n);
-  const desc=document.createElement('p');desc.textContent=worldBenefit(n.type);
+  const desc=document.createElement('p');desc.textContent=worldBenefit(n.type,n);
   const bottom=document.createElement('span');bottom.className='route-bottom';bottom.textContent=n.type==='fight'?'Advance the Campaign':n.district;
   button.append(top,title,desc,bottom);button.onclick=()=>selectRoute(n.id);cards.append(button);
  }
@@ -65,8 +65,8 @@ function selectWorldStop(id){
  selected=id;const n=networkPlan.byId[id],t=JOURNEY_STOP_TYPES[n.type],color=worldColor(n.type);
  document.querySelectorAll('[data-route]').forEach(el=>{el.classList.toggle('selected',el.dataset.route===id);if(el.matches('.route-card'))el.setAttribute('aria-pressed',String(el.dataset.route===id));});
  $('.route-overlay').classList.add('has-selection');$('#routeActionLabel').textContent=worldStopName(n);$('#setOff').disabled=false;$('#setOff').style.background=color;$('#setOffText').textContent='Travel here';
- $('.note-label').textContent=t.label.toUpperCase();$('.note-label').style.color=color;$('#routeNote').style.borderColor=color;$('#routeNote p').textContent=t.description;
- $('#travelStatus').textContent=worldBenefit(n.type);
+ $('.note-label').textContent=t.label.toUpperCase();$('.note-label').style.color=color;$('#routeNote').style.borderColor=color;$('#routeNote p').textContent=n.type==='road'?worldBenefit(n.type,n):t.description;
+ $('#travelStatus').textContent=worldBenefit(n.type,n);
 }
 function requestWorldJourney(d){
  travelToken++;traveling=false;committed=false;pendingJourney={key:d.key,networkVersion:2};selected=null;

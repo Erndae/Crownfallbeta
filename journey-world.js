@@ -66,9 +66,25 @@ function journeyGraph(data={}){
   const layer=(types,col)=>types.map((type,j)=>add({id:`s${i}-${col}${j}`,stage:i,type,name:place+' · '+(col==='a'?'West ':'East ')+suffix[type],district:place,short:(col==='a'?'West ':'East ')+suffix[type],x:base+(col==='a'?330:680)+(j%2?20:-20),y:types.length===2?[240,690][j]:types.length===4?[130,350,570,790][j]:[150,450,760][j]}));
   const a=layer(layout.a,'a'),b=layer(layout.b,'b');a.forEach(n=>link(prev,n));
   layout.ab.forEach((targets,j)=>targets.forEach(k=>link(a[j],b[k])));layout.direct.forEach(j=>link(a[j],end));b.forEach(n=>link(n,end));
+  // A late junction must branch too. Keep the existing direct battle edge
+  // so committed journeys and old saves retain their original destination.
+  b.filter(n=>n.type==='road').forEach(junction=>{
+   ['safer','supply'].forEach((type,k)=>{
+    const direction=k?'South ':'North ',short=direction+suffix[type];
+    const branch=add({id:`${junction.id}-branch${k}`,stage:i,type,name:place+' · '+short,district:place,short,x:base+870,y:k?770:180});
+    link(junction,branch);link(branch,end);
+   });
+  });
   prev=end;
  }
  const record=data.record||{},position=record.position||'fight-'+(current-1);
  const active=record.hop?[edges.find(e=>e.from===position&&e.to===record.hop)].filter(Boolean):edges.filter(e=>e.from===position&&byId[e.to].stage===current);
  return {nodes,edges,byId,width:count*1040+340,height:1000,current,count,position,active:data.location?[]:active,start:byId[position]||byId['fight-'+(current-1)]};
+}
+
+// Describe the actual outgoing connections, rather than promising unseen paths.
+function journeyJunctionSummary(graph,node){
+ const exits=graph.edges.filter(e=>e.from===node.id).map(e=>graph.byId[e.to]);
+ const labels={safer:'shelter (−20% target)',supply:'shop (+$5 supplies)',risky:'danger (+$8 on victory)',cache:'cache (+$3)',fight:'the next battle',road:'another junction'};
+ return 'Choose from '+exits.length+' routes: '+exits.map(n=>labels[n.type]||n.name).join(' · ')+'.';
 }
