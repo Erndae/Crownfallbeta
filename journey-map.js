@@ -74,7 +74,7 @@ function buildJourneyNetwork(data){
  }
  const traveler=networkElement('g',{id:'traveler',transform:`translate(${g.start.x} ${g.start.y})`,'aria-label':'Your current position'});
  traveler.append(networkElement('circle',{cy:-12,r:54,class:'traveler-halo'}));
- const icon=networkElement('svg',{x:-22,y:-68,width:44,height:60,class:'king-piece'});icon.append(networkElement('use',{href:'#king'}));traveler.append(icon);
+ const icon=networkElement('g',{'data-character-token':'map'});icon.innerHTML=CrownfallCharacter.svg(CrownfallCharacter.get(),true);traveler.append(icon);
  traveler.append(networkElement('text',{class:'you-label',y:-83},'YOU'));svg.append(traveler);
  sizeJourneyNetwork();resetCamera();
 }

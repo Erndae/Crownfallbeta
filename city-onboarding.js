@@ -42,7 +42,8 @@ function cityOpening(fresh=false){
 }
 function cityWelcome(){
   cityEndTraining(); leaveBoard(); onTitle=false; setPack('street'); setLandBg(null); sceneMusic('menu');
-  app.innerHTML=`<section class="screen city-welcome"><div class="city-kicker">Crown City · The Safehouse</div><div class="welcome-king">${pieceSVG('K','me')}</div><h2>Everybody wants<br>a crown.<br><span>Yours starts here.</span></h2><p>Your new crew offers a practice fight before you challenge Vex. Learn to move, capture, and score, then assemble your army.</p><div class="welcome-actions"><button class="btn" id="cityTrain">Play tutorial fight</button><button class="btn ghost" id="citySkip">Skip tutorial · build my army</button><button class="city-text-button" id="cityBack">Back to city map</button></div></section>`;
+  app.innerHTML=`<section class="screen city-welcome"><div class="city-kicker">Crown City · The Safehouse</div><div class="welcome-king">${pieceSVG('K','me')}</div><h2>Everybody wants<br>a crown.<br><span>Yours starts here.</span></h2><p>Your new crew offers a practice fight before you challenge Vex. Learn to move, capture, and score, then assemble your army.</p><button class="city-text-button" id="cityCustomize">Customize your King</button><div class="welcome-actions"><button class="btn" id="cityTrain">Play tutorial fight</button><button class="btn ghost" id="citySkip">Skip tutorial · build my army</button><button class="city-text-button" id="cityBack">Back to city map</button></div></section>`;
+  $('#cityCustomize').onclick=()=>CrownfallCharacter.open();
   $('#cityTrain').onclick=cityTraining;
   $('#citySkip').onclick=()=>cityFinishTraining(true);
   $('#cityBack').onclick=()=>{cityOpeningSave(2);cityOpening();};

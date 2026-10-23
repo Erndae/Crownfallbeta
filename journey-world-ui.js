@@ -48,7 +48,7 @@ function buildWorldNetwork(data){
  }
  const traveler=networkElement('g',{id:'traveler',transform:`translate(${g.start.x} ${g.start.y})`,'aria-label':'You are at '+g.start.name});
  traveler.append(networkElement('circle',{r:31,class:'player-marker'}));
- const icon=networkElement('svg',{x:-15,y:-24,width:30,height:45,class:'king-piece'});icon.append(networkElement('use',{href:'#king'}));traveler.append(icon);svg.append(traveler);
+ const icon=networkElement('g',{'data-character-token':'map'});icon.innerHTML=CrownfallCharacter.svg(CrownfallCharacter.get(),true);traveler.append(icon);svg.append(traveler);traveler.querySelector('.player-marker').style.stroke=CrownfallCharacter.palette().accent;
  const cards=document.querySelector('.route-cards');cards.replaceChildren();
  for(const e of g.active){const n=g.byId[e.to],t=JOURNEY_STOP_TYPES[n.type],button=document.createElement('button');button.className='route-card';button.dataset.route=n.id;button.style.setProperty('--route',worldColor(n.type));button.setAttribute('aria-pressed','false');
   const top=document.createElement('div');top.className='route-card-top';top.innerHTML=journeyStopLogo(n.boss?'boss':n.type);const kind=document.createElement('span');kind.textContent=n.boss?'BOSS BATTLE':t.label.toUpperCase();top.append(kind);

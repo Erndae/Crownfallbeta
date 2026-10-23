@@ -2,6 +2,8 @@
 <html lang="en">
 <head>
 <script src="beta-storage.js"></script>
+<script src="character-style.js"></script>
+<link rel="stylesheet" href="character-style.css">
 <script src="journey-world.js"></script>
 <script src="journey-stop-icons.js"></script>
 <script src="journey-events.js"></script>
@@ -2454,7 +2456,7 @@ function pieceSVG(t, side, e){
   const me = side !== 'en';
   const el = eList(e);
   const mat = el.length ? MAT[['crystal','iron','gold','fire','thorn'].find(x => el.includes(x))] : null;
-  const fill = mat ? mat.fill : me ? 'var(--mef,#ffe14d)' : 'var(--enf,#161616)';
+  const fill = mat ? mat.fill : me ? (t==='K'?CrownfallCharacter.palette().fill:'var(--mef,#ffe14d)') : 'var(--enf,#161616)';
   const stroke = mat ? mat.stroke : me ? 'var(--mes,#111)' : 'var(--enemy,#ff3d9a)';
   let back = '', front = '';
   if(el.includes('fire')) back += '<g class="flame"><path d="M8 34 Q5 22 11 15 Q11 21 14 22 Q13 12 20 4 Q21 13 26 15 Q27 10 29 9 Q35 20 32 34 Z" fill="#ff5a1f" opacity=".9"/><path d="M12 34 Q10 26 14 21 Q15 25 17 25 Q17 17 21 12 Q23 19 26 21 Q30 27 28 34 Z" fill="#ffd23d"/></g>';
@@ -2463,7 +2465,7 @@ function pieceSVG(t, side, e){
   if(el.includes('iron')) front += '<g fill="#1b2230"><circle cx="12.5" cy="33" r="1.1"/><circle cx="20" cy="33" r="1.1"/><circle cx="27.5" cy="33" r="1.1"/></g><path d="M13 27 H27" stroke="#1b2230" stroke-width="1.4" stroke-dasharray="2 1.6"/>';
   if(el.includes('gold')) front += '<g><circle cx="32.5" cy="8" r="5.6" fill="#ffd23d" stroke="#4a2a00" stroke-width="1.5"/><text x="32.5" y="11.1" text-anchor="middle" font-size="8.5" font-weight="900" font-family="Arial Black,Arial" fill="#4a2a00">$</text></g>';
   const glow = el.length ? ` style="filter:var(--pcf) drop-shadow(0 0 3px ${ENCH[el[0]].col})"` : '';
-  return `<svg class="pc ${me?'me':'en'}${el.length ? ' ench' : ''}"${glow} viewBox="0 0 40 40" aria-hidden="true">${back}<g style="fill:${fill};stroke:${stroke}" stroke-width="2.1" stroke-linejoin="round">${SHAPE[t].replace('class="cut"', `style="stroke:${stroke};fill:none"`).replace('class="eye"', `style="fill:${stroke};stroke:none"`)}<rect x="9" y="30.5" width="22" height="5" rx="2"/></g>${front}</svg>`;
+  return `<svg class="pc ${me?'me':'en'}${el.length ? ' ench' : ''}"${glow} viewBox="0 0 40 40" aria-hidden="true">${back}<g style="fill:${fill};stroke:${stroke}" stroke-width="2.1" stroke-linejoin="round">${(t==='K'&&me?CrownfallCharacter.shape():SHAPE[t]).replace('class="cut"', `style="stroke:${stroke};fill:none"`).replace('class="eye"', `style="fill:${stroke};stroke:none"`)}<rect x="9" y="30.5" width="22" height="5" rx="2"/></g>${t==='K'&&me?CrownfallCharacter.crest():''}${front}</svg>`;
 }
 
 /* ---------- special pieces ---------- */
@@ -5226,6 +5228,7 @@ function title(){
     ${inC && worldCrowns() ? `<p class="savebadge runnertag" style="color:#ffd23d;font-family:var(--tag);font-size:15px">${runnerTitle()}</p>` : ''}
     <button class="btn ghost landsbtn" id="lands">${inC ? `${crownRow(PACK)} Journey · ${worldCrowns()}/${WORLD_TOTAL}` : 'Campaign Journey'}</button>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button class="btn ghost" id="achb">${inC ? `Achievements ${Object.keys(ACH).filter(k => ACHS.some(a => a.id === k)).length}/${ACHS.length}` : 'Achievements'}</button><button class="btn ghost" id="how">How to play</button></div>
+    <button class="btn ghost character-menu" id="customCharacter"><span data-character-token="badge">${CrownfallCharacter.svg()}</span> Customize character</button>
     <p class="savebadge">${saveBadgeText()}</p>
     ${inC ? `<div class="bests"><span>Best stage <b>${BEST.ante || '—'}</b></span><span>Best capture <b>${BEST.hand ? BEST.hand.toLocaleString() : '—'}</b></span></div>` : ''}
     <div class="setg three"><button class="btn ghost" id="mus">Music: ${musicOn?'On':'Off'}</button><button class="btn ghost" id="snd">Sound: ${soundOn?'On':'Off'}</button><button class="btn ghost" id="spd">Speed: ${fast?'Fast':'Normal'}</button></div>
@@ -5235,6 +5238,7 @@ function title(){
   </section>`;
   { const c = $('#cont'); if(c) c.onclick = () => inC ? (!RUN ? draftResume() : B ? playBlind(true) : (RUN.inShop ? shop() : blindSelect())) : goMode('campaign', 'cont'); }
   if(inC && !RUN && !getCarry() && draftGet() && !draftGet().seen && !window.__draftResumed){ window.__draftResumed = true; return teamIntro(); }   // v155: a refresh during "Meet your army" comes back to it
+  $('#customCharacter').onclick=()=>CrownfallCharacter.open();
   $('#new').onclick = () => inC ? (hasCampaign() ? newGameAsk() : startNewGame()) : goMode('campaign', 'new');   // NEW CAMPAIGN always replaces the whole campaign
   { const c = $('#gcont'); if(c) c.onclick = () => MODE === 'gauntlet' ? gContinue() : goMode('gauntlet', 'cont'); }
   $('#gnew').onclick = () => gs ? gNewAsk(gs) : (MODE === 'gauntlet' ? gNewRun() : goMode('gauntlet', 'new'));
@@ -7962,9 +7966,10 @@ function pieceInfo(p){
   if(p.side === 'me' && p.t === 'K' && !MATCH){                       // the Crownrunner
     const c = cmdState();
     el.className = 'pinfo kingp'; el.style.setProperty('--pc', 'var(--brass)');
-    el.innerHTML = `<span class="pi">${pieceSVG('K','me',p.e)}</span><div class="pt"><b>You <span class="lvtag">King</span></b>
+    el.innerHTML = `<span class="pi">${pieceSVG('K','me',p.e)}</span><div class="pt"><b><span data-character-name>You</span> <span class="lvtag">King</span></b>
       <span class="cs">World Crowns ${baseCrowns()}/${WORLD_TOTAL}</span>
       <span class="cs">${c.max ? `Crown Command <span class="cmdpips">${cmdPips(c)}</span> ${c.left}/${c.max}` : 'Crown Command · <b>Locked</b>: claim a World Crown'}</span></div>${cmdBtn()}`;
+    el.querySelector('[data-character-name]').textContent=CrownfallCharacter.get().name;
     bindCmd(); return;
   }
   if(p.side === 'me'){
@@ -10016,7 +10021,8 @@ function cityOpening(fresh=false){
 }
 function cityWelcome(){
   cityEndTraining(); leaveBoard(); onTitle=false; setPack('street'); setLandBg(null); sceneMusic('menu');
-  app.innerHTML=`<section class="screen city-welcome"><div class="city-kicker">Crown City · The Safehouse</div><div class="welcome-king">${pieceSVG('K','me')}</div><h2>Everybody wants<br>a crown.<br><span>Yours starts here.</span></h2><p>Your new crew offers a practice fight before you challenge Vex. Learn to move, capture, and score, then assemble your army.</p><div class="welcome-actions"><button class="btn" id="cityTrain">Play tutorial fight</button><button class="btn ghost" id="citySkip">Skip tutorial · build my army</button><button class="city-text-button" id="cityBack">Back to city map</button></div></section>`;
+  app.innerHTML=`<section class="screen city-welcome"><div class="city-kicker">Crown City · The Safehouse</div><div class="welcome-king">${pieceSVG('K','me')}</div><h2>Everybody wants<br>a crown.<br><span>Yours starts here.</span></h2><p>Your new crew offers a practice fight before you challenge Vex. Learn to move, capture, and score, then assemble your army.</p><button class="city-text-button" id="cityCustomize">Customize your King</button><div class="welcome-actions"><button class="btn" id="cityTrain">Play tutorial fight</button><button class="btn ghost" id="citySkip">Skip tutorial · build my army</button><button class="city-text-button" id="cityBack">Back to city map</button></div></section>`;
+  $('#cityCustomize').onclick=()=>CrownfallCharacter.open();
   $('#cityTrain').onclick=cityTraining;
   $('#citySkip').onclick=()=>cityFinishTraining(true);
   $('#cityBack').onclick=()=>{cityOpeningSave(2);cityOpening();};
