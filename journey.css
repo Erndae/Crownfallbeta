@@ -139,3 +139,8 @@ body[data-journey-land=throne] .cartographic-map .node-label,body[data-journey-l
 .cartographic-map .network-node .stop-hit{fill:transparent!important;stroke:none!important;filter:none!important;pointer-events:all}
 
 .journey-arrival-note{margin:0 0 14px;padding:12px 14px;border-left:3px solid #c8b47e;background:#1c2c30;color:#d4dbd1;font:13px/1.5 var(--body,'DM Sans',sans-serif)}
+
+/* Leave room for the phone travel controls while the map follows the King. */
+.map-window{scroll-margin-top:8px}
+@media(max-width:800px){.map-window{height:min(440px,58dvh);min-height:230px}}
+.map-window.is-traveling{touch-action:none;overscroll-behavior:contain}

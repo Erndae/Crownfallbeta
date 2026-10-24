@@ -7,16 +7,7 @@ function restoreLegacyCards(){
 }
 function worldStopName(n){return (n.type==='fight'||n.type==='entry'?n.name:n.short||n.name).replace(/(^|\s)(\S)/g,(_,space,letter)=>space+letter.toUpperCase());}
 function worldColor(type){const t=journeyLand(networkData.land);return type==='supply'||type==='cache'?t.shop:type==='risky'?t.risk:type==='safer'?t.safe:'#d1d8d4';}
-function worldPath(a,b){
- if(networkData.land==='street'){
-  const dx=b.x-a.x,dy=b.y-a.y,mid=Math.round((a.x+dx*.5)/50)*50,r=Math.min(26,Math.abs(dy)/2,Math.abs(dx)/5),dir=Math.sign(dy);
-  return r?`M${a.x} ${a.y} H${mid-r} Q${mid} ${a.y} ${mid} ${a.y+dir*r} V${b.y-dir*r} Q${mid} ${b.y} ${mid+r} ${b.y} H${b.x}`:`M${a.x} ${a.y} H${b.x}`;
- }
- const shape=journeyLand(networkData.land).shape;
- if(shape==='arches')return `M${a.x} ${a.y} C${a.x+130} ${a.y} ${b.x-130} ${b.y} ${b.x} ${b.y}`;
- if(shape==='shards')return `M${a.x} ${a.y} L${a.x+(b.x-a.x)*.4} ${a.y+(b.y-a.y)*.25} L${a.x+(b.x-a.x)*.65} ${a.y+(b.y-a.y)*.8} L${b.x} ${b.y}`;
- return `M${a.x} ${a.y} L${a.x+(b.x-a.x)*.55} ${a.y} L${b.x} ${b.y}`;
-}
+function worldPath(a,b,edge=networkPlan.edges.find(e=>e.from===a.id&&e.to===b.id)||{}){return journeyRoadPath(a,b,edge);}
 function worldText(parent,text,y,cls,max=24){
  const words=text.split(' '),lines=[];let line='';
  for(const word of words){if((line+' '+word).trim().length>max&&line){lines.push(line);line=word;}else line=(line+' '+word).trim();}if(line)lines.push(line);
@@ -28,10 +19,10 @@ function buildWorldNetwork(data){
  svg.replaceChildren();svg.setAttribute('viewBox',`0 0 ${g.width} ${g.height}`);svg.setAttribute('aria-label',journeyLand(data.land).name+' · connected world locations');
  const history=Object.values(data.history||{}),visitedEdges=new Set(history.flatMap(r=>(r.edges||[]).map(e=>e.join('>'))));
  for(const e of data.record?.edges||[])visitedEdges.add(e.join('>'));
- drawJourneyAtlas(svg,g,data,g.edges.map(e=>worldPath(g.byId[e.from],g.byId[e.to])));
+ drawJourneyAtlas(svg,g,data,g.edges.map(e=>worldPath(g.byId[e.from],g.byId[e.to],e)));
  for(const edge of g.edges){
   const a=g.byId[edge.from],b=g.byId[edge.to],active=g.active.some(e=>e.from===edge.from&&e.to===edge.to),visited=visitedEdges.has(edge.from+'>'+edge.to);
-  const path=worldPath(a,b),group=networkElement('g',{class:'network-edge'+(visited?' visited':'')+(b.stage<g.current?' past':'')});
+  const path=worldPath(a,b,edge),group=networkElement('g',{class:'network-edge'+(visited?' visited':'')+(b.stage<g.current?' past':'')});
   group.append(networkElement('path',{d:path,class:'network-link'}));svg.append(group);
   if(active){const track=networkElement('g',{class:'route-track','data-route':b.id,style:'--route:'+worldColor(b.type)});track.append(networkElement('path',{d:path,class:'route-glow'}),networkElement('path',{d:path,class:'route-line'}),networkElement('path',{d:path,class:'route-hit'}));track.onclick=()=>selectRoute(b.id);svg.append(track);}
  }
@@ -80,18 +71,29 @@ function requestWorldJourney(d){
  if(d.record?.hop){selectWorldStop(d.record.hop);committed=true;$('#setOffText').textContent='Continue saved journey';$('#travelStatus').textContent='Destination locked · resume where you left off';}
  const notice=$('#journeyArrivalNote');if(notice){notice.hidden=!d.record?.notice;notice.textContent=d.record?.notice?d.record.notice.name+' · '+d.record.notice.text:'';}
  // Keep repeated hops at the map; the primary action remains fixed on phones.
- $('.journey-summary').scrollIntoView({behavior:'instant',block:'start'});
+ focusJourneyMap();
 }
 function walkWorldStop(){
  if(traveling)return;
  if(!pendingJourney)return launch('campaign');
  if(!selected||!networkPlan.active.some(e=>e.to===selected))return;
  if(!committed){traveling=true;$('#setOff').disabled=true;$('#setOffText').textContent='Saving journey…';send('journey-commit',{key:pendingJourney.key,node:selected});const key=pendingJourney.key;setTimeout(()=>{if(pendingJourney?.key===key&&traveling&&!committed){traveling=false;$('#setOff').disabled=false;$('#setOffText').textContent='Retry departure';}},3000);return;}
+ focusJourneyMap(true);
  traveling=true;const token=++travelToken,key=pendingJourney.key,node=selected,path=$(`.route-track[data-route="${node}"] .route-line`),length=path.getTotalLength(),start=performance.now(),duration=reduced?0:1800;
  $('#setOff').disabled=true;$('#setOffText').textContent='On the road…';$('#mapWindow').classList.add('is-traveling');
- function tick(now){if(token!==travelToken)return;const t=duration?Math.min(1,(now-start)/duration):1,p=path.getPointAtLength(length*(t*t*(3-2*t)));$('#traveler').setAttribute('transform',`translate(${p.x} ${p.y})`);networkCamera(p.x,false,p.y);
+ function tick(now){if(token!==travelToken)return;const t=duration?Math.min(1,(now-start)/duration):1,p=path.getPointAtLength(length*(t*t*(3-2*t)));$('#traveler').setAttribute('transform',`translate(${p.x} ${p.y})`);networkCamera(p.x,false,p.y);keepJourneyMapVisible();
   if(t<1)return requestAnimationFrame(tick);
   $('#mapWindow').classList.remove('is-traveling');$('#travelStatus').textContent='Arrived · saving progress';send('journey-arrive',{key,node});
  }
  requestAnimationFrame(tick);
+}
+
+function focusJourneyMap(follow=false){
+ if(follow){networkOverview=false;sizeJourneyNetwork();$('#mapOverview').textContent='Whole map';networkCamera(networkPlan.start.x,false,networkPlan.start.y);}
+ $('#mapWindow').scrollIntoView({behavior:'instant',block:'start',inline:'nearest'});
+}
+function keepJourneyMapVisible(){
+ const map=$('#mapWindow'),rect=map.getBoundingClientRect();
+ const height=window.visualViewport?.height||window.innerHeight;
+ if(rect.top<0||rect.bottom>height)map.scrollIntoView({behavior:'instant',block:'start',inline:'nearest'});
 }

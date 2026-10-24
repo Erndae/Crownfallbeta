@@ -3,7 +3,7 @@
 // Buildings, plazas and roads therefore stay attached to their locations at every zoom.
 const JOURNEY_ATLAS_PALETTES={
  street:{ground:'#1d2d38',lot:'#293e47',roof:'#61747a',edge:'#829490',road:'#15252f',pave:'#425660',water:'#1e4f67',park:'#355e51',ink:'#d7d7bd'},
- medieval:{ground:'#354b3c',lot:'#455b46',roof:'#8c775c',edge:'#b8b08d',road:'#4c4f3d',pave:'#8b8970',water:'#3e6570',park:'#3d6849',ink:'#e1d4a5'},
+ medieval:{ground:'#354b3c',lot:'#455b46',roof:'#8c775c',edge:'#b8b08d',road:'#a17c50',pave:'#665234',water:'#3e6570',park:'#3d6849',ink:'#e1d4a5'},
  greek:{ground:'#526c68',lot:'#8b9b86',roof:'#dbd9bd',edge:'#e5ddbb',road:'#9bafaa',pave:'#d2d0b6',water:'#2c7c91',park:'#687c48',ink:'#f7e8bb'},
  fantasy:{ground:'#171e35',lot:'#3f4d61',roof:'#797095',edge:'#b4a5d3',road:'#4c486f',pave:'#8e7ba5',water:'#3e4e7e',park:'#437781',ink:'#decaf2'},
  throne:{ground:'#282630',lot:'#453943',roof:'#65515b',edge:'#af8b7d',road:'#322e39',pave:'#6c555c',water:'#492c3b',park:'#44473e',ink:'#e6bc9b'}
@@ -47,7 +47,7 @@ function drawJourneyAtlas(svg,g,data,paths){
  }
  const labels=add(atlas,'g',{class:'atlas-district-labels'});
  for(let i=1;i<=g.count;i++){
-  const stride=g.links?540:1040,x=(g.links?120:160)+(i-1)*stride;
+  const stride=g.links?540:1400,x=(g.links?120:160)+(i-1)*stride;
   add(labels,'text',{x:x+(g.links?220:330),y:48},data.land==='street'?({downtown:'DOWNTOWN STREETS',rooftop:'ABOVE THE CITY',harbor:'CROWN HARBOR',midnight:'THE NIGHT DISTRICT',ruler:'THE TOWER DISTRICT'}[data.circuitId]||'CROWN CITY'):journeyStagePlace(data.land,data.circuitId||'downtown',i).toUpperCase());
   add(labels,'path',{d:`M${x+160} 62H${Math.min(g.width-35,x+760)}`,stroke:p.edge,'stroke-width':1,opacity:.5});
  }

@@ -68,7 +68,7 @@ function createJourneyAtlasTheme(c){
   }else if(land==='medieval'){
    const hills=group(parent,'atlas-kingdom-terrain');
    for(let x=0;x<g.width;x+=155){path(hills,`M${x-45} 85L${x+35} 5L${x+110} 95Z`,'#31483f','#5f7961',1);path(hills,`M${x+14} 27L${x+35} 5L${x+55} 28L${x+37} 22Z`,'#b4b6a0','none');}
-   for(let x=120;x<g.width;x+=1040){path(hills,`M${x-60} 114H${x+820}M${x-60} 876H${x+820}`,'none','#686c60',17);path(hills,`M${x-60} 114H${x+820}M${x-60} 876H${x+820}`,'none','#b3aa8a',5,{'stroke-dasharray':'13 15'});}
+
   }else if(land==='greek'){
    const coast=group(parent,'atlas-aegean-coast');
    path(coast,`M0 830Q260 875 490 840T${g.width} 842V1000H0Z`,'#245369','none');
@@ -107,15 +107,20 @@ function createJourneyAtlasTheme(c){
   }
  }
  function roads(parent){
-  parent.dataset.surface={street:'asphalt',medieval:'cobblestone',greek:'marble',fantasy:'rune-bridge',throne:'broken-causeway'}[land];
+  parent.dataset.surface={street:'asphalt',medieval:'dirt',greek:'marble',fantasy:'rune-bridge',throne:'broken-causeway'}[land];
   // Paint the entire network in layers. A later road must never draw its curb
   // over the asphalt of an earlier road at a junction or shared stretch.
   const curb=group(parent,'atlas-road-curbs'),surface=group(parent,'atlas-road-surfaces'),markings=group(parent,'atlas-road-markings');
   for(const d of paths){
    if(land==='fantasy'){
     path(curb,d,'none','#101526',27);path(surface,d,'none','#887eac',17);path(markings,d,'none','#c7b9e2',2,{'stroke-dasharray':'3 16'});
+   }else if(land==='medieval'){
+    // A warm earth trail, without paved curbs or lane markings.
+    path(curb,d,'none','#5c5035',30,{'stroke-opacity':.55});
+    path(surface,d,'none',p.road,23);
+    path(markings,d,'none','#c4a16a',14,{'stroke-opacity':.22});
    }else{
-    path(curb,d,'none',p.pave,land==='street'?48:54);path(surface,d,'none',p.road,land==='street'?33:39);
+    path(curb,d,'none',p.pave,land==='street'?32:28);path(surface,d,'none',p.road,land==='street'?24:20);
     // Local city streets stay unmarked: route guidance is drawn separately.
     // This also avoids duplicate lane paint on shared graph connections.
     if(land!=='street')path(markings,d,'none',p.edge,land==='medieval'?26:1.5,{'stroke-dasharray':land==='medieval'?'2 10':land==='greek'?'3 12':'10 16','stroke-opacity':land==='medieval'?.22:.38});
