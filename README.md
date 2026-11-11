@@ -1,79 +1,110 @@
-# Crownfall Beta — Campaign journeys
+# Crownfall
 
-Play at https://erndae.github.io/Crownfallbeta/.
+A street-style chess roguelike. Capture pieces to score Material × Brilliance, checkmate Champions, and build your army with Relics, Grandmaster cards and special powers.
 
-## Campaign depth update
+Play it: https://erndae.github.io/Crownfall/
 
-- Four optional patrol missions: break the patrol, reach an exit, defend the supply Rook, or intercept a marked courier. Temporary patrol armies remain separate from Campaign armies and lives.
-- Stable officer and circuit-boss strategies use the existing formation and AI systems; battle briefings show counterplay. Rulers retain their established rules and formations.
-- Cavalry pair, Tower guard, and Pawn company synergies reward army composition and specific tactical captures. Each land adds one explicit scoring perk. Current bonuses and the last move’s arithmetic are available through existing battle feedback.
-- Optional $2 shortcut tolls bypass roadside stops. Aid choices cost $3 and deliver $5 at a later chosen shop; supplies survive Circuit carry and redeem once. Paid journey commitments stay resumable without a second charge.
-- Regression checks include `node validate-depth.mjs`, `node validate-encounters.mjs`, and `node validate-world.mjs`: conditional score bonuses, generated boss-army constraints, legal self-play mission solutions, all 572 route paths, save/reload behavior, and one-time payments. These are automated playtests, not recordings of human play sessions.
 
-This is the v156-based playable build from the Crownfall Journey Site, including the illustrated Downtown map, crown-shaped initiative dice, and automatic Campaign entry when route travel finishes. Between every Campaign fight, including circuit changes and Ruler battles, choose a route and walk to the next Stage screen. Routes affect the destination fight: Back alley lowers its score target by 20%; Market street grants $5 on commitment; Rooftop crossing raises its target by 20% and grants $8 extra on victory. Targets stay fixed on retries; supplies are granted once, including across refreshes. Each route applies only to its destination fight; Gauntlet and Crown Match are unaffected. Existing selected routes receive benefits when returning to their destination selection screen, without changing a battle already in progress.
 
-## Hosting
+## v158 — beta designs in main
 
-GitHub Pages publishes the root of `main`. No build step or server is needed. All images, music and game files are included. `.nojekyll` keeps the static files unchanged.
+Crown-shaped initiative die marks, animal ruler portraits (fox, lion, owl, raven and stag), distinct Campaign opponent identities with beta dialogue, customizable piece designs, and Crown City's weathered stone board and illustrated background. Main Campaign/Gauntlet save namespaces, combat rules, initiative results and the twelve-track soundtrack remain in place. The Journey travel system stays in beta.
 
-## Saves
+Run `node validate-main-design.mjs` and `node validate-character.mjs` for opponent identities, dialogue, syntax and player-only customization checks.
 
-This beta uses the `crownfall-beta-journey-` browser-storage prefix. Campaign, Gauntlet and Legacy remain separate within it. Main Crownfall saves and the earlier Army Limits beta saves are left intact. Progress from the private Journey Site is on a different origin and is not transferred automatically. Cloud saves are disabled for this beta. The old beta service worker is retired without clearing game saves.
+## v160 — carved pieces and clearer dock encounters
 
-## Source and validation
+Knights capture normally in every mode, including older saves. The retired capture restriction and its instructions are removed. Dockmaster Dee’s new battles have visible marked crate traps: landing on one costs up to $2, clears it once, and leaves the piece intact. The Crown City story message now explains the challenge to Vex. The Sculpted collection uses carved chess silhouettes, gold and plum shading, and layered bases; the Crown City victory screen shows the complete crown artwork without the pink striped frame.
 
-Based on Site source commit `81a9ad5c5d601710c7e5deab1a775472898c60c7`. `game-bridge.js` is the readable copy of the bridge embedded in `game.html`.
+Run `node validate-gameplay-v160.mjs` for legacy-rule compatibility, Knight captures, crate placement, one-time effects and saved trap state.
 
-Run `node validate-beta.mjs` for syntax, asset and storage-isolation checks. The source build also passed journey commitment, resume, idempotency and message-validation checks. The world-map revision has mobile and desktop browser QA; a full 85-battle Campaign playthrough was not performed.
+## v161 — approved Comic ink pieces
 
-## Opening and Crown City board
+The default piece collection now uses the approved Comic ink style: classic chess shapes, thick dark contours, flat gold and purple colors, sharp cel shadows and graphic highlights. Existing Sculpted selections pick up the new rendering automatically. Army colors, sizes, alternate silhouettes, King details and player-only customization remain available.
 
-The site opens on the game menu. New Campaign offers a short tutorial fight or an immediate skip to army creation. Training uses an independent board and legal chess moves, and never changes Campaign cash, rosters or battle saves. Skip remains available during training; completion continues to army creation. The road map appears after the first Downtown stage.
+## v162 — restore the readable original pieces
 
-`city-onboarding.js` is embedded inside the game closure in `game.html`. `city-board.css` uses the Downtown illustration, muted stone squares, iron edging and amber highlights for Crown City. Other Lands retain their themes. Run `node validate-onboarding.mjs` to check the opening, both tutorial paths, training move legality and scoring, save preservation, and cancellation when leaving training.
+The original flat piece silhouettes, rounded bases, bold team outlines and initiative light/dark colors are restored. Existing Sculpted/Comic ink profiles move back to Original while retaining names, colors, sizes and other cosmetic choices. Alternate sets remain available for an explicit later selection. Store scroll retention, music, dialogue, capture-rule removal and dock crates remain intact.
 
-Travel commitment and arrival are saved separately. Refreshing before arrival resumes the locked route, while retries keep the same route benefits. The first Campaign battle and Gauntlet do not require travel. Run `node validate-routes.mjs` for route and transition checks.
+## v163 — clearer decisions and distinct encounters
 
-## Circuit network and optional shops
+- The battle goal bar states checkmate or the score target, switches to the correct final-phase objective, and explains winning-capture survival when tapped.
+- Move confirmation is on by default: choose a destination to inspect estimated points, current attacks and crate/tax costs; press Move or tap the destination again to commit. Disable confirmation from the goal panel for quick moves. Previews and Cancel never spend a move or change the board.
+- All 80 circuit encounter profiles now use the formations and styles named by their tactical plans. Opening cards and encounter details explain the formation actually accepted by the opening-safety checks.
+- Training shows Material, Brilliance and base capture scores before/after, with purchase feedback. Sold offers become compact receipts; scrolling anchors to a visible item while the store refreshes.
+- Harbor Stages 2–4 can have marked, one-use crates. Player entry costs up to $2; enemy entry recovers $2 for the player. The briefing explains both outcomes and no piece disappears.
+- First training costs $8; the Lv.1–6 price sequence is $8/$14/$24/$36/$52. Savings pay $1 per $5 held, capped at $5 ($6 in Midnight Market). This brings the cap into line with its advertised ability and reduces cash snowballing. See BALANCE-AUDIT.md for the 255-scenario arithmetic audit and its limits.
+- Defeat panels explain the outcome and focus the replay on the last relevant exchange, while preserving life-loss/checkpoint retries. Crown Match uses the same review; the Gauntlet ending includes a final-position review.
 
-The scrollable circuit map shows connected branches, battle nodes, markets and the completed route. View whole circuit fits the network; reachable stops are lit. Victories return to the route map instead of opening a shop. Only a chosen market branch opens a shop on arrival. Leave shop returns to the map for the onward travel leg. Safe and dangerous branches skip shopping. Shop inventory, arrival and departure are saved, including across reloads. This restriction applies to Campaign; Gauntlet keeps its Armory flow. Run `node validate-network.mjs` for map connectivity and stop checks.
+Validation: `node validate-gameplay-polish.mjs`, `node audit-balance.mjs`, and the existing `validate-main-design.mjs`, `validate-character.mjs` and `validate-gameplay-v160.mjs` scripts. UI integration uses `validate-polish-integration.mjs`; install `happy-dom` as a development-only dependency to run it. Its deterministic positions exercise real legality, scoring and UI handlers while animation, sound and the enemy reply are stubbed. It also checks 10 real cross-land opening deployments.
 
-## Maps for all five Lands
+## v164 — compact move confirmation
 
-`journey-lands.js` defines each Land's existing terrain artwork, palette, route names and path geometry. Crown City uses street crossings; Iron Kingdom uses ramparts; Olympian Court uses curved approaches; Shattered Realm uses broken zigzags; Fallen Throne uses angular ash roads. The active Campaign Land automatically selects its map for every circuit and Ruler approach. Map nodes show stage names supplied by the game. Shop branches, saved journeys and the mobile travel dock retain their behavior. The main game's saves remain isolated from this beta.
+A tentative move now appears directly on the board. The existing info row provides a compact cancel (✕) and confirm (✓) pair with 44px touch targets. Only the confirm button commits the move; repeated destination taps keep it pending. Cancel restores the original position without changing points, money or move counts. The row stays at its measured idle height, keeps labels on one line, and does not reduce or shift the board. Confirmation remains optional in the goal panel.
 
-## Beta soundtrack
+Validation includes real-handler checks for tentative rendering, explicit confirmation, cancellation, stale positions and the quick-move preference.
 
-Twelve original instrumental tracks live in `soundtrack/`: a title theme, separate travel/menu and battle tracks for each of the five lands, and a dedicated Crownless King theme. Land selection previews that land’s travel theme; the tutorial uses Crown City battle music. Returning to the route map restores travel music. Volume, mute, crossfades and background pause use the existing music manager; legacy music is preserved. `soundtrack/manifest.json` lists titles and generation provenance. Run `node validate-music.mjs` to check routing and audio assets.
+Browser layout checks at 320×568, 390×844, 430×932 and 768×1024 verify unchanged board dimensions and position, no horizontal overflow, and fully visible 44px confirm/cancel buttons.
 
-## World-location route revision
+## v165 — stable piece information and bottom controls
 
-Every circuit now has four distinct battle locations and a named boss destination; each Ruler has a final stronghold. `journey-world.js` is the shared source for all 85 battle names, map destinations and shop locations. Existing boss names, combat rules and campaign progression remain intact.
+Idle, player-piece, enemy-piece, King and confirmation views now share a fixed 58px info row. Names, scoring and enhancement badges fit within three compact lines, and the Command button remains fully visible. Selection no longer takes space from the board. Bottom actions retain their height, with room for their shadows above the screen edge.
 
-New journeys use a connected graph of individual stops, with one to four onward connections, forks, merges, optional shops and direct shortcuts. Junctions reveal the next connections; caches pay $3 once; shops pay $5 once on arrival and open the store. Shelters set the next fight to an 80% target, while danger stops set it to 120% with $8 extra on victory. The last shelter or danger visited determines that fight’s approach. Shops and caches preserve it. All fights remain mandatory.
+Browser checks cover every piece type on both sides, with and without multiple enhancements, at 320×568, 390×844, 430×932 and 768×1024. They verify unchanged board dimensions/position, vertically contained piece details, bottom controls and working confirm/cancel.
 
-Each edge is saved before departure. Refresh resumes that destination; rewards cannot be repeated, and leaving a shop returns to its exact node. Only connected nodes are accepted by the game bridge. Existing version-1 journeys finish on their original locked route; the following journey uses the new graph. Save namespaces and the Gauntlet are unchanged.
+## v166 — environments for every Campaign land
 
-Run `node validate-world.mjs` for exhaustive route checks (488 paths across 85 stages), alongside the existing beta, route, network, onboarding and music validators. Browser checks cover cache → shelter → battle, optional shop arrival/departure, all five map themes, four-choice junctions, and phone/desktop layouts.
+Iron Kingdom battles now stand against the torchlit fortress, Olympian Court against its temples and waterfalls, Shattered Realm against its floating ruins, and Fallen Throne against its ruined citadel. Each uses its own existing land illustration beneath a light readability shade. The old flat circuit scenery is hidden during these battles; Crown City retains its illustrated street environment. Fixed background layers preserve board dimensions, selection controls and bottom actions. All five environment images remain available in the offline cache.
 
-## Overhead location atlas
+## v167 — optional move confirmation in the pause menu
 
-`journey-cartography.js` draws a street-map background directly in the route map’s coordinates. Each stop has its own building or plaza; road surfaces follow the exact travel paths. Shops have striped storefronts, caches have storage crates, shelters have gardens, and junctions have fountain squares. Battle destinations have halls, stations or fortified strongholds. The harbor has a waterfront and piers. Each land retains its palette, and older saved journeys receive the atlas too. The route map no longer uses a perspective landscape behind floating points.
+Confirm Move is now an accessible On/Off switch in the Campaign, Gauntlet and Crown Match pause menus. It defaults to Off unless the player has explicitly enabled it, and remembers their choice on this device. Turning it off cancels any tentative move without spending a turn. The objective panel focuses on battle rules.
 
-## Distinct land map artwork
 
-`journey-atlas-themes.js` supplies separate terrain, buildings, landmarks and road surfaces for each land. Crown City has dense brick/glass blocks, roof equipment, lit storefronts, traffic, crossings and transit tracks; its rooftop and midnight circuits emphasize towers and neon. The Iron Kingdom has mountain ridges, castle walls, pine woods, timber houses, caravan stalls and stone keeps. The Olympian Court uses marble temples, columns, olive groves and an Aegean coast. The Shattered Realm has floating islands, crystalline spires, portals and rune bridges over a starry void. The Fallen Throne has fractured bastions, fallen masonry, dead trees and ember fissures. Named woods, fields and bridge/ford locations receive corresponding landmarks. Every land continues to use the exact saved travel graph and location coordinates.
+## v170 — reliable return from fights
 
-## Animal rulers and clearer navigation
+Returning to title clears old fight dialogs, replay controls/timers, input-swallow state, and battle presentation. Delayed board messages and reward panels are scoped to their originating battle view so they cannot cover a later menu or fight. Save-and-title waits for an active move to finish, while allowing paused initiative and interrupted replies to remain saved for Continue. The shop also clears board replay state. Saved board, rewards and campaign progression retain the same schema.
 
-The five land rulers now have humanoid animal portraits: Vex is a red fox, Aldric a lion, Athena a barn owl, Morwen a raven, and the Crownless King a stag. Names, rules and save identifiers are preserved. `assets/rulers/` contains the generated WebP portraits and art provenance; `game-clarity.css` sets their framing across land selection, dialogue and introductions. The ending also uses the stag artwork.
+Validation: `node validate-menu-transitions.mjs` (requires happy-dom, or set `CROWNFALL_DOM_MODULE`). Covers blocked title from nested enemy-recovery/pause dialogs, active-move exit, pending initiative exit, leftover overlays, delayed speech, replay cleanup, repeated defeat exits, Campaign rewards/shop and stale Gauntlet rewards. Existing polish integration, design, character, gameplay and splash checks pass. Browser check covers Campaign setup, defeat, return to title and opening Records afterward. Exact mobile viewport testing was unavailable in this environment.
 
-Land selection shows every land name without horizontal clipping, explains locked lands, and places the selected challenge’s Enter button above the army details. Boss rules and rewards expand on demand. The journey map displays current location and next battle, enlarges reachable stops, matches their numbers to readable choice cards, quiets distant labels, provides a My location recenter button, and keeps the Start/Continue action accessible on phones. Existing journey records remain compatible.
 
-## Something at every stop
+## v177 — targets keep pace with the army
 
-Arriving at a map stop now opens a saved roadside encounter before onward travel. Each land has quiet scenes, discoveries, local rumors, shelter scenes, shop welcomes and battle approaches tied to its own setting and circuit story. Learn about this place reveals optional story detail. Continue opens the correct shop, battle or next map choice.
+Campaign score targets were falling behind by the end of Crown City. Four changes, all in the target formula:
 
-Some junctions and dangerous stops contain a surprise patrol. Fight a short chess skirmish for $2, or slip away. The skirmish uses a separate board and the game's legal-move rules; capture its Rook to win. Enemy replies and a six-move limit keep it brief. Campaign rosters, upgrades and lives are unchanged. Skirmish rewards pay once. Arrival rewards, scene state, board selections and results survive reloads; unresolved scenes cannot be bypassed by starting another route. Existing version-1 journeys also receive arrival scenes.
+- Training is read from the two best-trained piece types (never less than the old five-type average), so an army that trains only Rooks and Knights no longer counts as 40% built.
+- From Circuit 3 each Stage adds a further 3%, so Harbor and Midnight climb about 6% per Stage instead of 3%. The Ruler's floor follows.
+- Scoring Relics and powers raise the target: multiplier Relic +10%, Brilliance Relic +5%, Material Relic +3% (at most +40%); Crystal +4%, Iron / Royal / Sharpened +2%, Blazing / Ascendant +1% per piece (at most +20%). Money, move, swap and defensive Relics and powers add nothing.
+- A move-limited boss never asks for less than 60% of the same Stage's Warm-up Game, and never more than the army can score inside the limit.
 
-journey-events.js holds the content and reproducible event selection. journey-encounter-ui.js is the readable renderer embedded in game.html; the bridge owns saved event progress. Run node validate-encounters.mjs for legal skirmishes, enemy turns, rewards, retreat and save isolation, and node validate-world.mjs for encounters and refresh recovery on every complete route.
+A new army's first circuit is unchanged. A fight already shown keeps its saved target. Scoring, prices, Training, Relics, the Gauntlet and Crown Match are untouched; the save format is the same. These numbers come from simulation, not a measured playtest.
+
+Validation: `node validate-v177.cjs` and `node audit-balance.mjs`.
+
+
+## v178 — every opponent has a voice
+
+The 60 named Campaign opponents used 13 shared lines chosen by formation, so a Crown City street player could open with a cavalry line. Each one now opens and concedes with a line of their own, and capture, hurt, check and win reactions follow the Land (Crown City, Iron Kingdom, Olympian Court, Shattered Realm, Fallen Throne). The formation lines remain as the fallback. Circuit bosses, Rulers, the Gauntlet and Crown Match keep their existing dialogue. Presentation only: no rule, target or save reads these lines.
+
+Validation: `node validate-v178.mjs`.
+
+
+## v179 — lighter install and repo cleanup
+
+The offline cache no longer downloads `legacy.html` or the five portraits only that page uses (about 2.1 MB less on first install); they still load normally online. Five files nothing referenced are removed: `icon-192.png`, `icon-512.png`, `favicon-32.png`, `apple-touch-icon.png` (byte-for-byte copies of the `cf-` icons) and `icon.svg`. No gameplay, save or art change. `legacy.html` and the root music and portraits it uses are kept.
+
+Earlier builds not listed above: v172 step-by-step capture combos; v173 capture bonus previews and run records; v174 campaign continuation between circuits; v175 stores stay available across transitions; v176 scoring defense and late-campaign guard encounters (v171's Downtown Blitz encounters were reverted).
+
+
+## v180 — Legacy Campaign retired
+
+`legacy.html` (the original 245-battle game, v150) and the title-screen link to it are removed, along with the files only it used: seven root music tracks and six old portraits. The repository drops from about 33 MB to about 20 MB. The current Campaign, the Gauntlet, Crown Match, the twelve-track soundtrack in `soundtrack/` and all current saves are unchanged. Old Legacy saves stay on the device but are no longer playable.
+
+
+## v181 — the ending carries into the next campaign
+
+When the Crown of Crowns is claimed, the winning King's name and soldiers' names are remembered on the device. In a later campaign, the Crownless King speaks of them, and tapping his pieces shows those names ("Ike · Enemy Rook", "Enemy King · once <name>"). Each enemy piece keeps the name it is first given through captures, promotions and reloads.
+
+Presentation only: his army, rules, AI, targets and the save format are unchanged. Nothing appears until an ending has been earned on the device, and never in the campaign that earned it, so the twist cannot be revealed early. Names are reduced to letters, digits, spaces and simple punctuation. The record is local and is not part of cloud saves.
+
+Validation: `node validate-v181.cjs`.

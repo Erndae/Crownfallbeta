@@ -1,0 +1,47 @@
+/* Reuse the existing HUD and piece-info space so the board stays full width. */
+.pbar.goal-button{display:block;width:100%;padding:0;text-align:right;cursor:pointer;color:var(--text);font:inherit;min-height:22px}
+.pbar.goal-button .ptgt{font-size:11px;letter-spacing:.02em;padding-inline:5px;white-space:nowrap}
+/* Every piece-info state shares one reserved row; selection cannot resize the board. */
+.play .pinfo{height:58px!important;min-height:58px!important;max-height:58px!important;flex:0 0 58px;box-sizing:border-box;padding:4px 8px!important;animation:none}
+.play .pinfo .pi,.play .pinfo .pi svg{width:38px;height:38px}
+.play .pinfo .pt{flex:1;min-width:0;gap:0;overflow:hidden;justify-content:center}
+.play .pinfo .pt > b{font-size:13px;line-height:16px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.play .pinfo .pt > span{font-size:11px;line-height:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.play .pinfo .pt > .ab{display:block!important;-webkit-line-clamp:unset;font-size:10.5px;line-height:14px}
+.play .pinfo .pt > .pws{display:flex!important;align-items:center;min-height:14px}
+.play .pinfo .pw{padding:0 3px;border-width:1px;font-size:10px!important;line-height:12px}
+.play .pinfo.idle > .muted{font-size:11px;line-height:14px}
+.play .pinfo .cmdbtn{height:44px;min-height:44px;max-height:44px;box-sizing:border-box}
+.play .actions{flex:none;min-height:44px}
+.play{padding-bottom:10px!important}
+/* Fixed to the idle info row: confirmation never borrows height from the board. */
+.pinfo.move-preview{display:grid;grid-template-columns:minmax(0,1fr) 44px 44px;gap:8px;align-items:center;height:var(--confirm-height,58px)!important;min-height:var(--confirm-height,58px)!important;max-height:var(--confirm-height,58px)!important;padding:1px 10px!important;box-sizing:border-box;animation:none}
+.move-preview .preview-copy{min-width:0;overflow:hidden;font:12px/1.3 var(--body);color:var(--text)}
+.move-preview .preview-copy b,.move-preview .preview-copy > span:not(.sr-only){display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.move-preview .preview-copy b{font-size:15px}.move-preview .preview-copy > span{color:var(--dim)}
+.move-preview .move-confirm{display:grid;place-items:center;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:2px solid #0d0d0d;border-radius:5px;background:#45464a;color:#fff;font:bold 25px/1 Arial;cursor:pointer;touch-action:manipulation}
+.move-preview .move-confirm.accept{background:#74a849;color:#fff}.move-preview .move-confirm:focus-visible{outline:3px solid var(--brass);outline-offset:1px}
+.move-preview .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.sq.preview-target{box-shadow:inset 0 0 0 3px #e8c889!important}.sq .dot.risk{background:#ff7c88!important;box-shadow:0 0 0 2px #371d25!important}
+.sq .preview-warning{position:absolute;right:2px;top:1px;font:bold 11px Arial;color:#ffb1b8;text-shadow:0 1px 2px #111;z-index:4;pointer-events:none}
+.encounter-brief{color:var(--dim);font:12px/1.45 var(--body);margin:8px 0}.encounter-brief b{color:var(--text)}
+.oppin .encounter-brief{max-width:330px;color:#e1daca;margin:5px 10px;font-size:12px;line-height:1.4}.oppin .hazard-brief{color:#ffd68a;font:11px/1.4 var(--body);max-width:330px;margin:3px 10px}
+.shopgrid .offer.sold{grid-column:1/-1;display:flex;flex-direction:row;align-items:center;gap:8px;min-height:0!important;padding:9px 12px!important;opacity:.65}
+.shopgrid .offer.sold h3{font:600 13px/1.3 var(--body);margin:0}.offer.sold small{font:11px var(--body);margin-left:auto;white-space:nowrap}
+.tprow .train-gain{display:block;color:var(--chips);font-size:11px;line-height:1.35;margin-top:3px}.tprow .trained-now{display:block;color:#b5dbbd;font-size:11px}
+.store-explain,.hazard-explain,.loss-review{background:var(--bg-2);border-left:3px solid var(--brass);padding:10px 12px;font:13px/1.5 var(--body);color:var(--text)}
+.loss-review{margin:8px 0}.loss-review b,.hazard-explain b{display:block}.loss-review p{font-size:13px;margin:5px 0}.loss-review .last-turn{font-size:12px;color:var(--dim)}
+@media(max-width:360px){.pbar.goal-button .ptgt{font-size:10px}}
+
+.training-help{border:0;background:none;text-decoration:underline;color:var(--text);font:12px var(--body);min-height:40px;padding:5px 8px}.loss-final{width:100%;margin-top:10px}
+
+/* v182 title: the painted city carries the top of the menu. The panel is clear behind the logo and fades in
+   below the tagline; the four secondary destinations share one 2 x 2 grid. Title screen only. */
+body:has(section.screen > h1.logoimg)::before{background:linear-gradient(180deg,#0b111826,#0c11154d 22%,#0b1015c7 46%,#0b1015e6)!important}
+body section.screen:has(> h1.logoimg){position:relative;background:linear-gradient(180deg,#17202400 0,#17202400 150px,#172024b8 232px,#172024ee 300px)!important;border-color:transparent!important;box-shadow:none!important}
+body section.screen:has(> h1.logoimg) > h1.logoimg{filter:drop-shadow(0 6px 14px #000b)}
+body section.screen:has(> h1.logoimg) > p.muted{color:#eee6d6;text-shadow:0 1px 6px #000}
+.titlenav{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.titlenav > .btn{display:flex!important;align-items:center;justify-content:center;gap:8px;min-height:54px;margin:0;padding-inline:8px;line-height:1.1}
+.titlenav .crowns{display:inline-flex}
+
